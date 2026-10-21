@@ -11,21 +11,27 @@ abstract class MasterTransport {
 }
 
 class WifiTransport implements MasterTransport {
+  WifiTransport({String authority = '192.168.4.1', Future<bool> Function()? bindWifi})
+      : _authority = authority, _bindWifi = bindWifi ?? _bindMasterWifi;
   static const channel = MethodChannel('demo_tubatech/wifi');
+  final String _authority;
+  final Future<bool> Function() _bindWifi;
   final HttpClient _client = HttpClient()..connectionTimeout = const Duration(seconds: 2);
+  static Future<bool> _bindMasterWifi() async => !Platform.isAndroid ||
+      await channel.invokeMethod<bool>('bindMasterWifi') == true;
   @override
   Future<Map<String, dynamic>> request(String path, {Map<String, String>? form}) async {
-    if (Platform.isAndroid) {
-      final bound = await channel.invokeMethod<bool>('bindMasterWifi');
-      if (bound != true) throw const SocketException('Join TubaTech_Master Wi-Fi');
-    }
-    final uri = Uri.http('192.168.4.1', path);
+    if (!await _bindWifi()) throw const SocketException('Join TubaTech_Master Wi-Fi');
+    final uri = Uri.http(_authority, path);
     final req = await _client.openUrl(form == null ? 'GET' : 'POST', uri)
         .timeout(const Duration(seconds: 2));
     req.persistentConnection = false;
     if (form != null) {
+      final bytes = utf8.encode(form.entries.map((e) =>
+          '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}').join('&'));
       req.headers.set(HttpHeaders.contentTypeHeader, 'application/x-www-form-urlencoded');
-      req.write(form.entries.map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}').join('&'));
+      req.contentLength = bytes.length;
+      req.add(bytes);
     }
     final res = await req.close().timeout(const Duration(seconds: 4));
     final body = await utf8.decoder.bind(res).join().timeout(const Duration(seconds: 4));

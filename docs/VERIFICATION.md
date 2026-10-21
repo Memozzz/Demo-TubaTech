@@ -2,6 +2,14 @@
 
 Software checks completed on 22 October 2026. No boards or relays were connected. The reviewed commit is the commit targeted by the release; reviewers can use the release tag or `git rev-parse HEAD` to inspect the exact source.
 
+## HTTP correction — 1.0.2 (build 3)
+
+Review of `70e5a701` found that the Android HTTP client streamed POST forms without Content-Length, while MASTER requires a fixed length and rejects Transfer-Encoding. The transport now encodes the form once into UTF-8 bytes, sets Content-Length to that byte count before sending, and adds exactly those bytes. Content-Type remains exactly `application/x-www-form-urlencoded`.
+
+Six focused tests use a real HttpClient and raw loopback TCP server, plus a test-only executable compiled against MASTER's actual unchanged `api_policy.h`. START, STOP and RESET requests have the expected byte length, no Transfer-Encoding and exact encoded body (including Unicode/reserved characters), and pass the actual HttpFrame parser. Empty STOP forms send Content-Length zero. Negative controls reproduce the previous chunked serializer's rejection and reject missing-length or changed-Content-Type POSTs. These checks validate HTTP framing, not physical relay execution.
+
+The complete Flutter suite (14 tests), analyzer and rebuilt release APK pass. All firmware files, GPIO assignments, sequence definitions and generated tables remain identical to `70e5a701`. Firmware compilation and emulator observations below are retained baseline results; hardware tests remain pending.
+
 ## Completed software checks
 
 - All **66** owner/GPIO/module/input assignments were checked against the requested upstream wiring source. No duplicate GPIO ownership or relay input ownership. Active-LOW polarity preserved.
@@ -13,7 +21,7 @@ Software checks completed on 22 October 2026. No boards or relays were connected
 - Flutter checks cover catalog/mapping, required-board gating, one START POST, late START response after STOP, unreachable STOP with reconnect retry, explicit fault recovery, honest offline UI, MASTER countdown with no phone relay timer, and 360×640 offline vinegar browsing with visible STOP.
 - `flutter analyze`, focused Flutter tests and universal release APK build pass. Application ID is `com.tubatech.demo`, minimum Android API 24, target API 36.
 - Espressif Arduino-ESP32 **3.3.12** compilation passes for MASTER and all four matching slaves. Local random Wi-Fi build configuration is ignored and unpublished.
-- The published **1.0.1 (build 2)** APK was installed and cold-launched in a Pixel 6 Android emulator: all five boards OFFLINE, START disabled, STOP unconfirmed while unreachable, and device Wi-Fi password instructions contain no credential value. No AndroidRuntime/Flutter error was logged. APK signature verification passed.
+- The baseline **1.0.1 (build 2)** APK was installed and cold-launched in a Pixel 6 Android emulator: all five boards OFFLINE, START disabled, STOP unconfirmed while unreachable, and device Wi-Fi password instructions contain no credential value. No AndroidRuntime/Flutter error was logged. APK signature verification passed. This offline observation did not exercise real POST framing; use 1.0.2 for the correction above.
 - No credentials, signing keys, personal Wi-Fi settings, local SDK paths, raw snapshots or build caches are committed. Development APK signing uses the local SDK key outside the repository.
 
 Local build/check logs are retained under ignored `checks/logs/`. Host ACKs and masks are **software stubs**, not physical measurements. No fake hardware success or animation replaces control.

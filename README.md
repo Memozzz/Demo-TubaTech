@@ -53,6 +53,8 @@ Tested toolchain:
 
 From a fresh clone with Flutter and Android SDK installed:
 
+The test suite also uses Python and a C++17 compiler to run the actual MASTER HTTP framing parser against real socket requests. The test builds its parser adapter automatically; on Windows use MSVC 2022 Build Tools or a C++ Native Tools prompt, and on Linux/macOS install `g++` or `clang++`.
+
 ```sh
 python tools/check_sources.py
 cd demo_app
@@ -106,3 +108,5 @@ python tools/run_host_checks.py
 ```
 
 On Windows with Visual Studio C++ tools, use `tools\run_host_checks.cmd` instead. Run Flutter checks from `demo_app/` as shown above. After staging, `python tools/audit_tracked_files.py` checks tracked source for local configuration, signing keys and common credential patterns. Build outputs, raw snapshots, local SDK paths and credentials remain outside Git.
+
+For the focused HTTP regression check alone, run `flutter test test/http_transport_test.dart --reporter expanded` from `demo_app/`. It captures real START/STOP/RESET requests before server-side HTTP normalization and passes the raw bytes to the unchanged firmware `HttpFrame`. It also reproduces the old chunked POST rejection. No physical hardware is required.
