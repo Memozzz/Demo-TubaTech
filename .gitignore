@@ -1,0 +1,31 @@
+# Local credentials and signing material
+**/wifi_config.h
+**/.env
+**/.env.*
+!**/.env.example
+**/key.properties
+**/*.keystore
+**/*.jks
+**/*.p12
+**/*.pem
+**/local.properties
+# Build/tool state and local artifacts
+.build/
+.local/
+snapshots/
+.build-host-checks.log
+**/*.apk
+**/*.bin
+deliverables/
+checks/logs/
+**/build/
+**/.dart_tool/
+**/.gradle/
+**/.kotlin/
+**/.cxx/
+**/__pycache__/
+**/*.iml
+**/GeneratedPluginRegistrant.java
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,13 @@
+#pragma once
+#include "component_registry.h"
+// Generated from definitions/control.json; edit the authoritative JSON.
+namespace demo {
+enum class DefinitionStatus { RelayDemo, SensorsPending, Ambiguous, Reserved };
+enum class ActionKind { SetOutput, WaitForSensor };
+struct Action {const char *component; bool on; ActionKind kind=ActionKind::SetOutput;};
+struct Phase {const char *name; const Action *actions; size_t count; uint32_t defaultMs;};
+struct FunctionDefinition {const char *id; const char *title; const Phase *phases; size_t phaseCount; DefinitionStatus status; const char *note;};
+@@DEFINITIONS@@
+constexpr size_t FUNCTION_COUNT=sizeof(functions)/sizeof(functions[0]);
+inline int functionIndex(const char *name){for(size_t i=0;i<FUNCTION_COUNT;++i)if(sameName(name,functions[i].id))return static_cast<int>(i);return -1;}
+} // namespace demo

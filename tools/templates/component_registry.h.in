@@ -1,0 +1,30 @@
+#pragma once
+// Generated from definitions/control.json; edit the authoritative JSON.
+#include <stddef.h>
+#include <stdint.h>
+namespace demo {
+enum class Kind : uint8_t { Valve, Pump };
+struct Component { const char *name; uint8_t node; uint8_t channel; Kind kind; const char *category; int gpio; uint8_t relayInput; bool installed; bool mappingVerified; uint8_t driver; uint8_t address; uint8_t driverChannel; uint8_t module; bool driverAvailable; };
+constexpr uint8_t UNMAPPED=255, DEFAULT_BENCH_MASK=31;
+// Indices 0..3 = Slaves 1..4; index 4 = MASTER-local, not a fifth slave.
+constexpr size_t ACTIVE_NODES=5, PLANNED_NODES=5, RELAYS_PER_NODE=14, MAX_OUTPUTS=14;
+constexpr bool REAL_HARDWARE_ENABLED=false;
+constexpr uint8_t outputPins[14]={16,17,18,19,21,22,23,25,26,27,32,33,13,14};
+constexpr uint8_t moduleCapacity[10]={16,16,16,4,4,4,4,2,2,2};
+constexpr Component components[]={
+@@COMPONENTS@@
+};
+constexpr size_t COMPONENT_COUNT=sizeof(components)/sizeof(components[0]);
+constexpr bool sameName(const char *a,const char *b){if(!a||!b)return false;while(*a&&*a==*b){++a;++b;}return *a==*b;}
+constexpr bool mapped(const Component &c){return c.node!=UNMAPPED&&c.channel!=UNMAPPED;}
+constexpr bool validAssignment(const Component &c){return c.node<5&&c.channel<14&&c.driver==1&&c.gpio==outputPins[c.channel]&&c.module>=1&&c.module<=10&&c.relayInput>=1&&c.relayInput<=moduleCapacity[c.module-1]&&!(c.node==4&&(c.gpio==25||c.gpio==26||c.gpio==27));}
+constexpr bool realOutputAvailable(const Component &){return false;}
+constexpr const Component *find(const char *name,const Component *entries=components,size_t count=COMPONENT_COUNT){for(size_t i=0;i<count;++i)if(sameName(name,entries[i].name))return &entries[i];return nullptr;}
+constexpr bool validRegistry(const Component *entries,size_t count,size_t activeNodes){
+ if(!entries||!count||!activeNodes||activeNodes>5)return false;
+ for(size_t i=0;i<count;++i){const auto &c=entries[i];if(!validAssignment(c)||c.node>=activeNodes)return false;
+  for(size_t j=0;j<i;++j)if(sameName(c.name,entries[j].name)||(c.node==entries[j].node&&c.channel==entries[j].channel)||(c.module==entries[j].module&&c.relayInput==entries[j].relayInput))return false;}
+ return true;
+}
+static_assert(COMPONENT_COUNT==66&&validRegistry(components,COMPONENT_COUNT,5),"Invalid proposed fixed map");
+}

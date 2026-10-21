@@ -1,0 +1,6 @@
+{
+  "upstream_repository": "https://github.com/Memozzz/Tubatech",
+  "upstream_commit": "160e5099bff3408bf41a0bdff83635b9d752f2cb",
+  "sequence_semantics_sha256": "91ec5ab616f34f04721d257ba08ad4e7feb194fc8c7d6b4c7220b5e0c8279c73",
+  "wiring_semantics_sha256": "346431821e6a5512bb97fecb2c21cd897593a3efe05ae3384258f2897e611f2a"
+}

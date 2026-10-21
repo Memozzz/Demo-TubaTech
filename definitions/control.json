@@ -1,0 +1,1751 @@
+{
+  "catalog_version": "final-66-2026-10-19",
+  "functions": [
+    {
+      "id": "W_A",
+      "title": "Wine pour initial",
+      "status": "RelayDemo",
+      "note": "Manual bench intake only; pH/ethanol/ultrasonic inspection not implemented.",
+      "executable": true,
+      "required_channels": 1,
+      "phases": [
+        {
+          "name": "Wine pour initial",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "V1",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_B",
+      "title": "Wine initial -> PC1",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 3,
+      "phases": [
+        {
+          "name": "Wine initial -> PC1",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "V2",
+              "on": true
+            },
+            {
+              "component": "V3",
+              "on": true
+            },
+            {
+              "component": "PUMP_1",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_C",
+      "title": "Wine clean initial",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Wine clean initial",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CV1",
+              "on": true
+            },
+            {
+              "component": "DV1",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "PUMP_5",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_D",
+      "title": "Wine F1/FF1 backflush",
+      "status": "RelayDemo",
+      "note": "Unloaded demonstration only; continued HP_PUMP/PUMP_5 is not validated hydraulic operation.",
+      "executable": true,
+      "required_channels": 10,
+      "phases": [
+        {
+          "name": "First flush",
+          "seconds": 15,
+          "actions": [
+            {
+              "component": "CV1",
+              "on": false
+            },
+            {
+              "component": "DV1",
+              "on": false
+            },
+            {
+              "component": "V2",
+              "on": false
+            },
+            {
+              "component": "CV2",
+              "on": true
+            },
+            {
+              "component": "FV2",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "PUMP_1",
+              "on": true
+            },
+            {
+              "component": "PUMP_5",
+              "on": true
+            }
+          ]
+        },
+        {
+          "name": "Reverse backflush",
+          "seconds": 15,
+          "actions": [
+            {
+              "component": "PUMP_1",
+              "on": false
+            },
+            {
+              "component": "CV3",
+              "on": true
+            },
+            {
+              "component": "FV1",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_E",
+      "title": "Wine PC1 monitor",
+      "status": "SensorsPending",
+      "note": "pH and ethanol sensors not installed/calibrated.",
+      "executable": false,
+      "required_channels": 0,
+      "phases": []
+    },
+    {
+      "id": "W_F",
+      "title": "Wine PC1 -> PC2",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 3,
+      "phases": [
+        {
+          "name": "Wine PC1 -> PC2",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "V4",
+              "on": true
+            },
+            {
+              "component": "V5",
+              "on": true
+            },
+            {
+              "component": "PUMP_2",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_G",
+      "title": "Wine clean PC1",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Wine clean PC1",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CV4",
+              "on": true
+            },
+            {
+              "component": "DV2",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "PUMP_5",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_H",
+      "title": "Wine F2/FF2 backflush",
+      "status": "RelayDemo",
+      "note": "Unloaded demonstration only; continued HP_PUMP/PUMP_5 is not validated hydraulic operation.",
+      "executable": true,
+      "required_channels": 10,
+      "phases": [
+        {
+          "name": "First flush",
+          "seconds": 15,
+          "actions": [
+            {
+              "component": "CV4",
+              "on": false
+            },
+            {
+              "component": "DV2",
+              "on": false
+            },
+            {
+              "component": "V4",
+              "on": false
+            },
+            {
+              "component": "CV5",
+              "on": true
+            },
+            {
+              "component": "FV4",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "PUMP_2",
+              "on": true
+            },
+            {
+              "component": "PUMP_5",
+              "on": true
+            }
+          ]
+        },
+        {
+          "name": "Reverse backflush",
+          "seconds": 15,
+          "actions": [
+            {
+              "component": "PUMP_2",
+              "on": false
+            },
+            {
+              "component": "CV6",
+              "on": true
+            },
+            {
+              "component": "FV3",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_I",
+      "title": "Wine PC2 monitor",
+      "status": "SensorsPending",
+      "note": "pH and ethanol sensors not installed/calibrated.",
+      "executable": false,
+      "required_channels": 0,
+      "phases": []
+    },
+    {
+      "id": "W_J",
+      "title": "Wine PC2 -> PC1",
+      "status": "RelayDemo",
+      "note": "V2 explicitly normalizes old PUMP 3 to PUMP_3.",
+      "executable": true,
+      "required_channels": 3,
+      "phases": [
+        {
+          "name": "Wine PC2 -> PC1",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "V6",
+              "on": true
+            },
+            {
+              "component": "V7",
+              "on": true
+            },
+            {
+              "component": "PUMP_3",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_K",
+      "title": "Wine clean PC2",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Wine clean PC2",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CV7",
+              "on": true
+            },
+            {
+              "component": "DV3",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "PUMP_5",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_L",
+      "title": "Wine F3/FF3 backflush",
+      "status": "RelayDemo",
+      "note": "Unloaded demonstration only; continued HP_PUMP/PUMP_5 is not validated hydraulic operation.",
+      "executable": true,
+      "required_channels": 10,
+      "phases": [
+        {
+          "name": "First flush",
+          "seconds": 15,
+          "actions": [
+            {
+              "component": "CV7",
+              "on": false
+            },
+            {
+              "component": "DV3",
+              "on": false
+            },
+            {
+              "component": "V6",
+              "on": false
+            },
+            {
+              "component": "CV8",
+              "on": true
+            },
+            {
+              "component": "FV5",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "PUMP_3",
+              "on": true
+            },
+            {
+              "component": "PUMP_5",
+              "on": true
+            }
+          ]
+        },
+        {
+          "name": "Reverse backflush",
+          "seconds": 15,
+          "actions": [
+            {
+              "component": "PUMP_3",
+              "on": false
+            },
+            {
+              "component": "CV9",
+              "on": true
+            },
+            {
+              "component": "FV6",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_M1",
+      "title": "Wine PC1 -> final",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 2,
+      "phases": [
+        {
+          "name": "Wine PC1 -> final",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "V8",
+              "on": true
+            },
+            {
+              "component": "PUMP_4",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_M2",
+      "title": "Wine PC2 -> final",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 2,
+      "phases": [
+        {
+          "name": "Wine PC2 -> final",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "V9",
+              "on": true
+            },
+            {
+              "component": "PUMP_4",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_N",
+      "title": "Wine clean final transfer hose",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 5,
+      "phases": [
+        {
+          "name": "Wine clean final transfer hose",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CV8",
+              "on": true
+            },
+            {
+              "component": "DV4",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "PUMP_4",
+              "on": true
+            },
+            {
+              "component": "PUMP_5",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_O",
+      "title": "Wine post-transfer J -> K",
+      "status": "Ambiguous",
+      "note": "J is product transfer, not cleaning; clarify composite route.",
+      "executable": false,
+      "required_channels": 0,
+      "phases": []
+    },
+    {
+      "id": "W_P",
+      "title": "Wine clean output",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Wine clean output",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CV10",
+              "on": true
+            },
+            {
+              "component": "DV5",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "PUMP_5",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W_DAILY",
+      "title": "Wine daily alternation",
+      "status": "Reserved",
+      "note": "Availability, sensors and one-week orchestration are not validated.",
+      "executable": false,
+      "required_channels": 0,
+      "phases": []
+    },
+    {
+      "id": "W_DISPENSE",
+      "title": "Wine product dispensing",
+      "status": "RelayDemo",
+      "note": "Final source specifies manual V10. Timed unloaded demonstration; no dispensing volume claimed.",
+      "executable": true,
+      "required_channels": 1,
+      "phases": [
+        {
+          "name": "Wine product dispensing",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "V10",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_A",
+      "title": "Vinegar pour initial",
+      "status": "RelayDemo",
+      "note": "User clarification 2026-10-18: IV2 was a typo for VV1. Sensor gates pending.",
+      "executable": true,
+      "required_channels": 1,
+      "phases": [
+        {
+          "name": "Vinegar pour initial",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "VV1",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_B",
+      "title": "Mother vinegar dosing",
+      "status": "RelayDemo",
+      "note": "Bench pulse only; no ultrasonic dosing decision or validated dose.",
+      "executable": true,
+      "required_channels": 1,
+      "phases": [
+        {
+          "name": "Mother vinegar dosing",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "DCP1",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_C1",
+      "title": "Vinegar initial -> PC1",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 3,
+      "phases": [
+        {
+          "name": "Vinegar initial -> PC1",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "VV2",
+              "on": true
+            },
+            {
+              "component": "VV3",
+              "on": true
+            },
+            {
+              "component": "VPUMP_1",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_C2",
+      "title": "Vinegar initial -> PC2",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 3,
+      "phases": [
+        {
+          "name": "Vinegar initial -> PC2",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "VV2",
+              "on": true
+            },
+            {
+              "component": "VV4",
+              "on": true
+            },
+            {
+              "component": "VPUMP_1",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_D1",
+      "title": "Vinegar clean initial",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Vinegar clean initial",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CVV1",
+              "on": true
+            },
+            {
+              "component": "DVV1",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "VPUMP_4",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_D2",
+      "title": "Vinegar clean initial hoses",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 3,
+      "phases": [
+        {
+          "name": "Vinegar clean initial hoses",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CVV2",
+              "on": true
+            },
+            {
+              "component": "DVV2",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_E1",
+      "title": "Vinegar aerate PC1",
+      "status": "RelayDemo",
+      "note": "Bench only; temperature/pH/ethanol control unimplemented.",
+      "executable": true,
+      "required_channels": 2,
+      "phases": [
+        {
+          "name": "Vinegar aerate PC1",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "AV1",
+              "on": true
+            },
+            {
+              "component": "AP",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_E2",
+      "title": "Vinegar aerate PC2",
+      "status": "RelayDemo",
+      "note": "Bench only; temperature/pH/ethanol control unimplemented.",
+      "executable": true,
+      "required_channels": 2,
+      "phases": [
+        {
+          "name": "Vinegar aerate PC2",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "AV2",
+              "on": true
+            },
+            {
+              "component": "AP",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_F1",
+      "title": "Vinegar PC1 -> output",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 3,
+      "phases": [
+        {
+          "name": "Vinegar PC1 -> output",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "VV5",
+              "on": true
+            },
+            {
+              "component": "VV7",
+              "on": true
+            },
+            {
+              "component": "VPUMP_2",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_F2",
+      "title": "Vinegar PC2 -> output",
+      "status": "RelayDemo",
+      "note": "User clarification 2026-10-18: vinegar VPUMP_3 is distinct from wine PUMP_3.",
+      "executable": true,
+      "required_channels": 3,
+      "phases": [
+        {
+          "name": "Vinegar PC2 -> output",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "VV6",
+              "on": true
+            },
+            {
+              "component": "VV8",
+              "on": true
+            },
+            {
+              "component": "VPUMP_3",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_G1",
+      "title": "Vinegar clean PC1",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Vinegar clean PC1",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CVV3",
+              "on": true
+            },
+            {
+              "component": "DVV3",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "VPUMP_4",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_G2",
+      "title": "Vinegar clean PC2",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Vinegar clean PC2",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CVV5",
+              "on": true
+            },
+            {
+              "component": "DVV4",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "VPUMP_4",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_H1",
+      "title": "Vinegar clean PC1 hoses",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Vinegar clean PC1 hoses",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CVV4",
+              "on": true
+            },
+            {
+              "component": "DVV5",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "VPUMP_2",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_H2",
+      "title": "Vinegar clean PC2 hoses",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Vinegar clean PC2 hoses",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CVV6",
+              "on": true
+            },
+            {
+              "component": "DVV5",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "VPUMP_3",
+              "on": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V_I",
+      "title": "Vinegar clean output",
+      "status": "RelayDemo",
+      "note": "",
+      "executable": true,
+      "required_channels": 4,
+      "phases": [
+        {
+          "name": "Vinegar clean output",
+          "seconds": 30,
+          "actions": [
+            {
+              "component": "CVV7",
+              "on": true
+            },
+            {
+              "component": "DVV6",
+              "on": true
+            },
+            {
+              "component": "HP_PUMP",
+              "on": true
+            },
+            {
+              "component": "VPUMP_4",
+              "on": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "components": [
+    {
+      "component": "V1",
+      "node_id": 4,
+      "output_index": 3,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 19,
+      "relay_module": 1,
+      "relay_input": 1,
+      "active_low": true
+    },
+    {
+      "component": "V2",
+      "node_id": 1,
+      "output_index": 0,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 16,
+      "relay_module": 4,
+      "relay_input": 1,
+      "active_low": true
+    },
+    {
+      "component": "V3",
+      "node_id": 1,
+      "output_index": 1,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 17,
+      "relay_module": 4,
+      "relay_input": 2,
+      "active_low": true
+    },
+    {
+      "component": "V4",
+      "node_id": 0,
+      "output_index": 0,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 16,
+      "relay_module": 1,
+      "relay_input": 2,
+      "active_low": true
+    },
+    {
+      "component": "V5",
+      "node_id": 0,
+      "output_index": 1,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 17,
+      "relay_module": 1,
+      "relay_input": 3,
+      "active_low": true
+    },
+    {
+      "component": "V6",
+      "node_id": 4,
+      "output_index": 4,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 21,
+      "relay_module": 1,
+      "relay_input": 4,
+      "active_low": true
+    },
+    {
+      "component": "V7",
+      "node_id": 1,
+      "output_index": 12,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 13,
+      "relay_module": 1,
+      "relay_input": 5,
+      "active_low": true
+    },
+    {
+      "component": "V8",
+      "node_id": 4,
+      "output_index": 5,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 22,
+      "relay_module": 1,
+      "relay_input": 6,
+      "active_low": true
+    },
+    {
+      "component": "V9",
+      "node_id": 2,
+      "output_index": 12,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 13,
+      "relay_module": 1,
+      "relay_input": 7,
+      "active_low": true
+    },
+    {
+      "component": "V10",
+      "node_id": 2,
+      "output_index": 13,
+      "kind": "Valve",
+      "category": "transfer/intake valve",
+      "gpio": 14,
+      "relay_module": 1,
+      "relay_input": 8,
+      "active_low": true
+    },
+    {
+      "component": "CV1",
+      "node_id": 0,
+      "output_index": 2,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 18,
+      "relay_module": 1,
+      "relay_input": 9,
+      "active_low": true
+    },
+    {
+      "component": "CV2",
+      "node_id": 0,
+      "output_index": 3,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 19,
+      "relay_module": 1,
+      "relay_input": 10,
+      "active_low": true
+    },
+    {
+      "component": "CV3",
+      "node_id": 0,
+      "output_index": 4,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 21,
+      "relay_module": 1,
+      "relay_input": 11,
+      "active_low": true
+    },
+    {
+      "component": "CV4",
+      "node_id": 1,
+      "output_index": 13,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 14,
+      "relay_module": 1,
+      "relay_input": 12,
+      "active_low": true
+    },
+    {
+      "component": "CV5",
+      "node_id": 0,
+      "output_index": 12,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 13,
+      "relay_module": 1,
+      "relay_input": 13,
+      "active_low": true
+    },
+    {
+      "component": "CV6",
+      "node_id": 0,
+      "output_index": 13,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 14,
+      "relay_module": 1,
+      "relay_input": 14,
+      "active_low": true
+    },
+    {
+      "component": "CV7",
+      "node_id": 1,
+      "output_index": 2,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 18,
+      "relay_module": 1,
+      "relay_input": 15,
+      "active_low": true
+    },
+    {
+      "component": "CV8",
+      "node_id": 1,
+      "output_index": 3,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 19,
+      "relay_module": 1,
+      "relay_input": 16,
+      "active_low": true
+    },
+    {
+      "component": "CV9",
+      "node_id": 1,
+      "output_index": 4,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 21,
+      "relay_module": 2,
+      "relay_input": 1,
+      "active_low": true
+    },
+    {
+      "component": "CV10",
+      "node_id": 4,
+      "output_index": 8,
+      "kind": "Valve",
+      "category": "cleaning valve",
+      "gpio": 26,
+      "relay_module": 2,
+      "relay_input": 2,
+      "active_low": true
+    },
+    {
+      "component": "DV1",
+      "node_id": 4,
+      "output_index": 9,
+      "kind": "Valve",
+      "category": "drain valve",
+      "gpio": 27,
+      "relay_module": 2,
+      "relay_input": 3,
+      "active_low": true
+    },
+    {
+      "component": "DV2",
+      "node_id": 1,
+      "output_index": 9,
+      "kind": "Valve",
+      "category": "drain valve",
+      "gpio": 27,
+      "relay_module": 2,
+      "relay_input": 4,
+      "active_low": true
+    },
+    {
+      "component": "DV3",
+      "node_id": 1,
+      "output_index": 10,
+      "kind": "Valve",
+      "category": "drain valve",
+      "gpio": 32,
+      "relay_module": 2,
+      "relay_input": 5,
+      "active_low": true
+    },
+    {
+      "component": "DV4",
+      "node_id": 2,
+      "output_index": 1,
+      "kind": "Valve",
+      "category": "drain valve",
+      "gpio": 17,
+      "relay_module": 2,
+      "relay_input": 6,
+      "active_low": true
+    },
+    {
+      "component": "DV5",
+      "node_id": 2,
+      "output_index": 2,
+      "kind": "Valve",
+      "category": "drain valve",
+      "gpio": 18,
+      "relay_module": 2,
+      "relay_input": 7,
+      "active_low": true
+    },
+    {
+      "component": "FV1",
+      "node_id": 0,
+      "output_index": 5,
+      "kind": "Valve",
+      "category": "filter valve",
+      "gpio": 22,
+      "relay_module": 2,
+      "relay_input": 8,
+      "active_low": true
+    },
+    {
+      "component": "FV2",
+      "node_id": 0,
+      "output_index": 6,
+      "kind": "Valve",
+      "category": "filter valve",
+      "gpio": 23,
+      "relay_module": 2,
+      "relay_input": 9,
+      "active_low": true
+    },
+    {
+      "component": "FV3",
+      "node_id": 1,
+      "output_index": 5,
+      "kind": "Valve",
+      "category": "filter valve",
+      "gpio": 22,
+      "relay_module": 2,
+      "relay_input": 10,
+      "active_low": true
+    },
+    {
+      "component": "FV4",
+      "node_id": 1,
+      "output_index": 6,
+      "kind": "Valve",
+      "category": "filter valve",
+      "gpio": 23,
+      "relay_module": 2,
+      "relay_input": 11,
+      "active_low": true
+    },
+    {
+      "component": "FV5",
+      "node_id": 1,
+      "output_index": 7,
+      "kind": "Valve",
+      "category": "filter valve",
+      "gpio": 25,
+      "relay_module": 2,
+      "relay_input": 12,
+      "active_low": true
+    },
+    {
+      "component": "FV6",
+      "node_id": 1,
+      "output_index": 8,
+      "kind": "Valve",
+      "category": "filter valve",
+      "gpio": 26,
+      "relay_module": 2,
+      "relay_input": 13,
+      "active_low": true
+    },
+    {
+      "component": "PUMP_1",
+      "node_id": 2,
+      "output_index": 0,
+      "kind": "Pump",
+      "category": "wine pump",
+      "gpio": 16,
+      "relay_module": 5,
+      "relay_input": 1,
+      "active_low": true
+    },
+    {
+      "component": "PUMP_2",
+      "node_id": 4,
+      "output_index": 10,
+      "kind": "Pump",
+      "category": "wine pump",
+      "gpio": 32,
+      "relay_module": 2,
+      "relay_input": 14,
+      "active_low": true
+    },
+    {
+      "component": "PUMP_3",
+      "node_id": 1,
+      "output_index": 11,
+      "kind": "Pump",
+      "category": "wine pump",
+      "gpio": 33,
+      "relay_module": 2,
+      "relay_input": 15,
+      "active_low": true
+    },
+    {
+      "component": "PUMP_4",
+      "node_id": 2,
+      "output_index": 3,
+      "kind": "Pump",
+      "category": "wine pump",
+      "gpio": 19,
+      "relay_module": 2,
+      "relay_input": 16,
+      "active_low": true
+    },
+    {
+      "component": "PUMP_5",
+      "node_id": 0,
+      "output_index": 11,
+      "kind": "Pump",
+      "category": "wine pump",
+      "gpio": 33,
+      "relay_module": 3,
+      "relay_input": 1,
+      "active_low": true
+    },
+    {
+      "component": "VV1",
+      "node_id": 2,
+      "output_index": 4,
+      "kind": "Valve",
+      "category": "vinegar valve",
+      "gpio": 21,
+      "relay_module": 3,
+      "relay_input": 2,
+      "active_low": true
+    },
+    {
+      "component": "VV2",
+      "node_id": 2,
+      "output_index": 5,
+      "kind": "Valve",
+      "category": "vinegar valve",
+      "gpio": 22,
+      "relay_module": 3,
+      "relay_input": 3,
+      "active_low": true
+    },
+    {
+      "component": "VV3",
+      "node_id": 2,
+      "output_index": 6,
+      "kind": "Valve",
+      "category": "vinegar valve",
+      "gpio": 23,
+      "relay_module": 3,
+      "relay_input": 4,
+      "active_low": true
+    },
+    {
+      "component": "VV4",
+      "node_id": 2,
+      "output_index": 7,
+      "kind": "Valve",
+      "category": "vinegar valve",
+      "gpio": 25,
+      "relay_module": 3,
+      "relay_input": 5,
+      "active_low": true
+    },
+    {
+      "component": "VV5",
+      "node_id": 4,
+      "output_index": 6,
+      "kind": "Valve",
+      "category": "vinegar valve",
+      "gpio": 23,
+      "relay_module": 3,
+      "relay_input": 6,
+      "active_low": true
+    },
+    {
+      "component": "VV6",
+      "node_id": 3,
+      "output_index": 12,
+      "kind": "Valve",
+      "category": "vinegar valve",
+      "gpio": 13,
+      "relay_module": 3,
+      "relay_input": 7,
+      "active_low": true
+    },
+    {
+      "component": "VV7",
+      "node_id": 4,
+      "output_index": 7,
+      "kind": "Valve",
+      "category": "vinegar valve",
+      "gpio": 25,
+      "relay_module": 3,
+      "relay_input": 8,
+      "active_low": true
+    },
+    {
+      "component": "VV8",
+      "node_id": 4,
+      "output_index": 12,
+      "kind": "Valve",
+      "category": "vinegar valve",
+      "gpio": 13,
+      "relay_module": 3,
+      "relay_input": 9,
+      "active_low": true
+    },
+    {
+      "component": "CVV1",
+      "node_id": 2,
+      "output_index": 8,
+      "kind": "Valve",
+      "category": "vinegar cleaning valve",
+      "gpio": 26,
+      "relay_module": 3,
+      "relay_input": 10,
+      "active_low": true
+    },
+    {
+      "component": "CVV2",
+      "node_id": 3,
+      "output_index": 1,
+      "kind": "Valve",
+      "category": "vinegar cleaning valve",
+      "gpio": 17,
+      "relay_module": 3,
+      "relay_input": 11,
+      "active_low": true
+    },
+    {
+      "component": "CVV3",
+      "node_id": 3,
+      "output_index": 3,
+      "kind": "Valve",
+      "category": "vinegar cleaning valve",
+      "gpio": 19,
+      "relay_module": 3,
+      "relay_input": 12,
+      "active_low": true
+    },
+    {
+      "component": "CVV4",
+      "node_id": 3,
+      "output_index": 5,
+      "kind": "Valve",
+      "category": "vinegar cleaning valve",
+      "gpio": 22,
+      "relay_module": 3,
+      "relay_input": 13,
+      "active_low": true
+    },
+    {
+      "component": "CVV5",
+      "node_id": 3,
+      "output_index": 6,
+      "kind": "Valve",
+      "category": "vinegar cleaning valve",
+      "gpio": 23,
+      "relay_module": 3,
+      "relay_input": 14,
+      "active_low": true
+    },
+    {
+      "component": "CVV6",
+      "node_id": 4,
+      "output_index": 13,
+      "kind": "Valve",
+      "category": "vinegar cleaning valve",
+      "gpio": 14,
+      "relay_module": 3,
+      "relay_input": 15,
+      "active_low": true
+    },
+    {
+      "component": "CVV7",
+      "node_id": 4,
+      "output_index": 1,
+      "kind": "Valve",
+      "category": "vinegar cleaning valve",
+      "gpio": 17,
+      "relay_module": 3,
+      "relay_input": 16,
+      "active_low": true
+    },
+    {
+      "component": "DVV1",
+      "node_id": 2,
+      "output_index": 9,
+      "kind": "Valve",
+      "category": "vinegar drain valve",
+      "gpio": 27,
+      "relay_module": 4,
+      "relay_input": 3,
+      "active_low": true
+    },
+    {
+      "component": "DVV2",
+      "node_id": 3,
+      "output_index": 2,
+      "kind": "Valve",
+      "category": "vinegar drain valve",
+      "gpio": 18,
+      "relay_module": 4,
+      "relay_input": 4,
+      "active_low": true
+    },
+    {
+      "component": "DVV3",
+      "node_id": 3,
+      "output_index": 4,
+      "kind": "Valve",
+      "category": "vinegar drain valve",
+      "gpio": 21,
+      "relay_module": 5,
+      "relay_input": 2,
+      "active_low": true
+    },
+    {
+      "component": "DVV4",
+      "node_id": 3,
+      "output_index": 7,
+      "kind": "Valve",
+      "category": "vinegar drain valve",
+      "gpio": 25,
+      "relay_module": 5,
+      "relay_input": 3,
+      "active_low": true
+    },
+    {
+      "component": "DVV5",
+      "node_id": 4,
+      "output_index": 0,
+      "kind": "Valve",
+      "category": "vinegar drain valve",
+      "gpio": 16,
+      "relay_module": 5,
+      "relay_input": 4,
+      "active_low": true
+    },
+    {
+      "component": "DVV6",
+      "node_id": 4,
+      "output_index": 2,
+      "kind": "Valve",
+      "category": "vinegar drain valve",
+      "gpio": 18,
+      "relay_module": 6,
+      "relay_input": 1,
+      "active_low": true
+    },
+    {
+      "component": "VPUMP_1",
+      "node_id": 2,
+      "output_index": 11,
+      "kind": "Pump",
+      "category": "vinegar pump",
+      "gpio": 33,
+      "relay_module": 6,
+      "relay_input": 2,
+      "active_low": true
+    },
+    {
+      "component": "VPUMP_2",
+      "node_id": 3,
+      "output_index": 10,
+      "kind": "Pump",
+      "category": "vinegar pump",
+      "gpio": 32,
+      "relay_module": 6,
+      "relay_input": 3,
+      "active_low": true
+    },
+    {
+      "component": "VPUMP_3",
+      "node_id": 3,
+      "output_index": 11,
+      "kind": "Pump",
+      "category": "vinegar pump",
+      "gpio": 33,
+      "relay_module": 6,
+      "relay_input": 4,
+      "active_low": true
+    },
+    {
+      "component": "VPUMP_4",
+      "node_id": 3,
+      "output_index": 8,
+      "kind": "Pump",
+      "category": "vinegar pump",
+      "gpio": 26,
+      "relay_module": 7,
+      "relay_input": 1,
+      "active_low": true
+    },
+    {
+      "component": "AV1",
+      "node_id": 3,
+      "output_index": 13,
+      "kind": "Valve",
+      "category": "aeration valve",
+      "gpio": 14,
+      "relay_module": 7,
+      "relay_input": 2,
+      "active_low": true
+    },
+    {
+      "component": "AV2",
+      "node_id": 3,
+      "output_index": 0,
+      "kind": "Valve",
+      "category": "aeration valve",
+      "gpio": 16,
+      "relay_module": 7,
+      "relay_input": 3,
+      "active_low": true
+    },
+    {
+      "component": "HP_PUMP",
+      "node_id": 0,
+      "output_index": 10,
+      "kind": "Pump",
+      "category": "shared cleaning pump",
+      "gpio": 32,
+      "relay_module": 7,
+      "relay_input": 4,
+      "active_low": true
+    },
+    {
+      "component": "AP",
+      "node_id": 3,
+      "output_index": 9,
+      "kind": "Pump",
+      "category": "aeration pump",
+      "gpio": 27,
+      "relay_module": 8,
+      "relay_input": 1,
+      "active_low": true
+    },
+    {
+      "component": "DCP1",
+      "node_id": 2,
+      "output_index": 10,
+      "kind": "Pump",
+      "category": "dosing actuator, hardware type unvalidated",
+      "gpio": 32,
+      "relay_module": 8,
+      "relay_input": 2,
+      "active_low": true
+    }
+  ],
+  "radio_channel": 6,
+  "boards": [
+    {
+      "node_id": 0,
+      "name": "MASTER",
+      "mac": "38:18:2B:8A:9D:30"
+    },
+    {
+      "node_id": 1,
+      "name": "SLAVE 1",
+      "mac": "68:25:DD:F1:A3:78"
+    },
+    {
+      "node_id": 2,
+      "name": "SLAVE 2",
+      "mac": "58:2A:BD:D3:08:F4"
+    },
+    {
+      "node_id": 3,
+      "name": "SLAVE 3",
+      "mac": "78:1C:3C:A5:50:80"
+    },
+    {
+      "node_id": 4,
+      "name": "SLAVE 4",
+      "mac": "38:3E:51:D4:6A:30"
+    }
+  ]
+}
