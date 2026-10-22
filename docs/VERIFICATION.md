@@ -2,6 +2,14 @@
 
 Software checks completed on 22 October 2026. No boards or relays were connected. The reviewed commit is the commit targeted by the release; reviewers can use the release tag or `git rev-parse HEAD` to inspect the exact source.
 
+## Demonstration preparation — 1.0.3 (build 4)
+
+Steps 1–5 were checked in order. The corrected real HTTP START/STOP/RESET tests pass against MASTER's unchanged parser. Authoritative definitions and actual peer configuration agree on all five MACs, channel 6, 66 GPIO/module/input assignments, active-LOW drivers and boot-OFF levels. Ordered actions and durations retain the source fingerprints. W_E, W_I, W_O and W_DAILY remain unavailable.
+
+The eight app-flow checks and actual-sketch host checks pass: direct AP START, no login/arming/profile-confirmation UI, visible STOP, ACK gates, watchdog shutdown, 132 STOP checkpoints, 30-second W_B and the two 15-second backflush phases. These are software checks with explicit GPIO/radio stubs.
+
+The updated APK and all five board-specific Arduino-ESP32 3.3.12 images are built from the release source. Firmware, GPIO assignments, sequence definitions and app control behavior are unchanged; changes are versioning, verification and packaging. The local bundle identifies each image by role/MAC and keeps the Wi-Fi credential private. The GitHub release has the APK, credential-free source, upload guide and exact-commit manifest. [The physical-session checklist](DEMO_UPLOAD.md) remains entirely NOT TESTED.
+
 ## HTTP correction — 1.0.2 (build 3)
 
 Review of `70e5a701` found that the Android HTTP client streamed POST forms without Content-Length, while MASTER requires a fixed length and rejects Transfer-Encoding. The transport now encodes the form once into UTF-8 bytes, sets Content-Length to that byte count before sending, and adds exactly those bytes. Content-Type remains exactly `application/x-www-form-urlencoded`.

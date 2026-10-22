@@ -6,6 +6,8 @@ Normal operation: join **TubaTech_Master** Wi-Fi → choose a sequence → **STA
 
 The original [Memozzz/Tubatech](https://github.com/Memozzz/Tubatech) repository is unchanged. This repository is independent. See [provenance and attribution](NOTICE.md).
 
+For the matching demonstration package, board-specific Arduino links, local image filenames and upload order, see [the concise demonstration/upload guide](docs/DEMO_UPLOAD.md). The Wi-Fi password and compiled MASTER image are local-only because the image embeds the credential; neither is published to GitHub.
+
 ## Authoritative definitions
 
 [`definitions/control.json`](definitions/control.json) is the source of truth for all board identities, 66 output assignments and 34 sequence entries. It preserves **30 executable relay sequences / 33 ordered phases** plus four pending entries. Generated views:
@@ -87,6 +89,8 @@ python tools/build_firmware.py
 ```
 
 You can pass `--cli /path/to/arduino-cli`. On Windows the build script also finds the Arduino IDE bundled CLI. It compiles all five images without a connected board, writes logs to `checks/logs/`, and puts binaries under ignored `deliverables/firmware/`.
+
+After committing the verified source, `python tools/package_demo.py` creates an ignored **LOCAL-ONLY** bundle containing the APK, five role/MAC-labelled images, upload guide, hashes and `PRIVATE-WIFI.txt`. This bundle embeds the privately configured credential and must not be uploaded. GitHub releases provide credential-free source instead.
 
 ## Upload and connect later
 
