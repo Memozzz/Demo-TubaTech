@@ -1,0 +1,20 @@
+#pragma once
+#include <stdint.h>
+// Generated from definitions/control.json. Board IDs: MASTER=0, slaves=1..4.
+namespace demo {
+#if defined(TUBATECH_HOST_TEST) && defined(TUBATECH_TEST_FULL_DEMO)
+constexpr bool PARTIAL_DEMO_ENABLED=false; // Full-mode regression tests only.
+#else
+constexpr bool PARTIAL_DEMO_ENABLED=true;
+#endif
+#if defined(TUBATECH_HOST_TEST) && defined(TUBATECH_TEST_EXCLUDE_SLAVE2)
+constexpr uint8_t EXCLUDED_BOARD_MASK=1U<<2; // Explicit-absence regression only.
+#else
+constexpr uint8_t EXCLUDED_BOARD_MASK=0;
+#endif
+constexpr bool SKIP_UNREADY_AT_START=true;
+static_assert((EXCLUDED_BOARD_MASK&~0x1E)==0,"Only slave board IDs 1..4 may be excluded");
+constexpr bool boardExcluded(uint8_t owner){return owner<5&&PARTIAL_DEMO_ENABLED&&(EXCLUDED_BOARD_MASK&(1U<<owner));}
+constexpr bool nodeExcluded(uint8_t index){return index<5&&boardExcluded(index==4?0:uint8_t(index+1));}
+constexpr uint8_t excludedNodeMask(){uint8_t mask=0;for(uint8_t n=0;n<5;++n)if(nodeExcluded(n))mask|=uint8_t(1U<<n);return mask;}
+} // namespace demo

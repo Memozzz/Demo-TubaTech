@@ -1,6 +1,6 @@
 """Build and run the actual five sketch host tests with GCC/Clang C++17."""
 from pathlib import Path
-import argparse, shutil, subprocess
+import argparse, shutil, subprocess, sys
 ROOT=Path(__file__).resolve().parents[1]
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--cxx');args=parser.parse_args()
@@ -14,3 +14,12 @@ if __name__=='__main__':
             '-Ichecks/host/stubs',f'-DTEST_NODE={node}',str(ROOT/'checks/host'/source),'-o',str(out/name)]
         subprocess.run(cmd,cwd=ROOT,check=True)
         subprocess.run([str(out/name)],cwd=ROOT,check=True)
+    partial=out/'partial_demo'
+    subprocess.run([compiler,'-std=c++17','-Wall','-Wextra','-Wno-misleading-indentation','-Ichecks/host/stubs',
+        str(ROOT/'checks/host/partial_demo_tests.cpp'),'-o',str(partial)],cwd=ROOT,check=True)
+    subprocess.run([str(partial)],cwd=ROOT,check=True)
+    subprocess.run([sys.executable,str(ROOT/'tools/check_partial_api.py')],cwd=ROOT,check=True)
+    direct=out/'direct_master'
+    subprocess.run([compiler,'-std=c++17','-Wall','-Wextra','-Wno-misleading-indentation','-Ichecks/host/stubs',
+        str(ROOT/'checks/host/direct_master_tests.cpp'),'-o',str(direct)],cwd=ROOT,check=True)
+    subprocess.run([str(direct)],cwd=ROOT,check=True)

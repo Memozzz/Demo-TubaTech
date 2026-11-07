@@ -1720,6 +1720,11 @@
       "active_low": true
     }
   ],
+  "partial_demo": {
+    "enabled": true,
+    "skip_unready_at_start": true,
+    "excluded_board_ids": []
+  },
   "radio_channel": 6,
   "boards": [
     {
@@ -1735,7 +1740,7 @@
     {
       "node_id": 2,
       "name": "SLAVE 2",
-      "mac": "58:2A:BD:D3:08:F4"
+      "mac": "20:50:0D:8C:80:C4"
     },
     {
       "node_id": 3,

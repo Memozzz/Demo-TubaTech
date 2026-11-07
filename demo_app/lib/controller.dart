@@ -59,20 +59,60 @@ class DemoController extends ChangeNotifier {
   DateTime? _lastStatusAt;
   List<Map<String, dynamic>> get functions => (catalog['functions'] as List).cast<Map<String, dynamic>>();
   List<Map<String, dynamic>> get components => (catalog['components'] as List).cast<Map<String, dynamic>>();
+  bool get partialDemo {
+    if (connected) return status?['partial_demo_enabled'] == true;
+    final config = catalog['partial_demo'] as Map?;
+    return config?['enabled'] == true;
+  }
+  Set<int> get excludedOwners {
+    if (!partialDemo) return {};
+    final config = catalog['partial_demo'] as Map?;
+    final ids = connected ? (status?['excluded_board_ids']) : (config?['excluded_board_ids']);
+    return ids is List ? ids.whereType<int>().where((id) => id >= 1 && id <= 4).toSet() : {};
+  }
+  bool get skipUnreadyAtStart {
+    if (!partialDemo) return false;
+    if (connected) return status?['skip_unready_at_start'] == true;
+    final config = catalog['partial_demo'] as Map?;
+    return config?['skip_unready_at_start'] == true;
+  }
+  Set<int> get startExcludedOwners => {
+    ...excludedOwners,
+    if (connected && skipUnreadyAtStart)
+      for (final b in boards)
+        if (b['node_id'] != 0 && b['ready'] != true && b['unsafe_for_start'] != true) b['node_id'] as int,
+  };
+  Set<int> get actionExcludedOwners {
+    final frozen = status?['skipped_board_ids'];
+    if (connected && (busy || fault) && frozen is List) return {...excludedOwners, ...frozen.cast<int>()};
+    return startExcludedOwners;
+  }
+  bool get _partialConfigurationValid {
+    if (status?['partial_demo_enabled'] != true) return true;
+    final ids = status?['excluded_board_ids'];
+    return ids is List && ids.every((id) => id is int && id >= 1 && id <= 4) && ids.toSet().length == ids.length;
+  }
   bool get compatible => connected && status?['layout_id'] == 'five-board-fixed-v1' &&
-      status?['catalog_version'] == catalog['catalog_version'] && status?['demo_control_version'] == 1;
+      status?['catalog_version'] == catalog['catalog_version'] && status?['demo_control_version'] == 1 && _partialConfigurationValid;
   bool get busy => connected && status?['busy'] == true;
   bool get fault => connected && status?['fault'] == true;
   bool get canReset => compatible && fault && !busy && !sending;
   List<Map<String, dynamic>> get boards => connected
       ? ((status?['nodes'] as List?) ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList() : [];
-  Set<int> requiredOwners(Map<String, dynamic> function) {
+  Set<int> assignedOwners(Map<String, dynamic> function) {
     final names = <String>{};
     for (final p in function['phases'] as List) {
       for (final a in (p as Map)['actions'] as List) { names.add((a as Map)['component'] as String); }
     }
     return components.where((c) => names.contains(c['component'])).map((c) => c['node_id'] as int).toSet();
   }
+  Set<int> requiredOwners(Map<String, dynamic> function) => assignedOwners(function).difference(startExcludedOwners);
+  bool componentSkipped(String name) => components.any((c) => c['component'] == name && actionExcludedOwners.contains(c['node_id']));
+  Set<String> skippedComponents(Map<String, dynamic> function) => {
+    for (final phase in function['phases'] as List)
+      for (final action in (phase as Map)['actions'] as List)
+        if (componentSkipped((action as Map)['component'] as String)) action['component'] as String,
+  };
   bool canStart(Map<String, dynamic> function) => compatible && !sending && !stopPending && !busy && !fault &&
       status?['recovering'] != true && function['executable'] == true && requiredOwners(function).every(
         (id) => boards.any((b) => b['node_id'] == id && b['ready'] == true && b['acknowledged_mask'] == 0 &&
@@ -86,7 +126,9 @@ class DemoController extends ChangeNotifier {
     if (busy || sending) return 'MASTER operation in progress.';
     if (status?['recovering'] == true) return 'MASTER is verifying outputs OFF.';
     if (!canStart(function)) return 'Waiting for required boards to report ready and OFF.';
-    return 'Ready · MASTER executes all steps and timers.';
+    return skippedComponents(function).isNotEmpty
+        ? 'Ready · PARTIAL DEMO: excluded actions SKIPPED / NOT EXECUTED; phase timers preserved.'
+        : 'Ready · MASTER executes all steps and timers.';
   }
   void _emit() { if (!_disposed) notifyListeners(); }
   void begin() {
@@ -118,7 +160,8 @@ class DemoController extends ChangeNotifier {
         final knownOff = data['busy'] == false && data['all_off_verified'] == true;
         if (_stopAccepted && knownOff) {
           stopPending = false;
-          message = 'STOP complete · required outputs acknowledged OFF.';
+          message = partialDemo ? 'STOP complete · participating outputs acknowledged OFF; excluded outputs NOT EXECUTED.'
+              : 'STOP complete · required outputs acknowledged OFF.';
         } else {
           await _sendStop();
         }

@@ -16,6 +16,12 @@ def generate(check=False):
     assert len({(c['relay_module'],c['relay_input']) for c in components})==66
     assert [b['node_id'] for b in boards]==list(range(5))
     assert len({b['mac'] for b in boards})==5
+    partial=data['partial_demo']
+    assert isinstance(partial['enabled'],bool)
+    assert isinstance(partial['skip_unready_at_start'],bool)
+    excluded=partial['excluded_board_ids']
+    assert isinstance(excluded,list) and all(type(n) is int and 1<=n<=4 for n in excluded)
+    assert len(set(excluded))==len(excluded),'Duplicate excluded board ID'
     for c in components:
         assert c['active_low'] is True
         assert c['gpio']==[16,17,18,19,21,22,23,25,26,27,32,33,13,14][c['output_index']]
@@ -49,6 +55,10 @@ def generate(check=False):
     macs='\n'.join(' {'+','.join('0x'+s for s in b['mac'].split(':'))+'},' for b in boards)
     boardmap=(ROOT/'tools/templates/board_map.h.in').read_text().replace('@@MACS@@',macs)
     outputs={ROOT/'demo_app/assets/catalog.json':json.dumps(data,indent=2)+'\n'}
+    config=(ROOT/'tools/templates/demo_config.h.in').read_text().replace('@@ENABLED@@',str(partial['enabled']).lower())
+    config=config.replace('@@EXCLUDED_MASK@@',str(sum(1<<n for n in excluded)))
+    config=config.replace('@@SKIP_UNREADY@@',str(partial['skip_unready_at_start']).lower())
+    outputs[ROOT/'firmware'/BOARDS[0]/'demo_config.h']=config
     for board in BOARDS:
         folder=ROOT/'firmware'/board
         outputs.update({folder/'component_registry.h':registry,folder/'function_library.h':library,folder/'board_map.h':boardmap})

@@ -2,6 +2,8 @@
 
 Separate Android controller for the **66 wired, active-LOW relay outputs** on one ESP32 MASTER and four ESP-NOW slaves. App label: **Demo TubaTech**. Android application ID: **`com.tubatech.demo`**, separate from the original `com.example.tubatech` app. Both can remain installed.
 
+**Direct MASTER control:** see [the app-free upload and command guide](docs/MASTER_DIRECT.md). Slave 2/TETRIARY is enabled with replacement MAC `20:50:0D:8C:80:C4`. START skips safely unavailable slaves at that moment, preserving every phase timer and pin assignment. It can run with only MASTER present. Late boards join on the next START; loss of an already participating board still faults. See [configuration, verification and exact upload requirements](docs/PARTIAL_DEMO.md).
+
 Normal operation: join **TubaTech_Master** Wi-Fi → choose a sequence → **START**. No operator login, arming screen, unloaded confirmation, profile approval or Serial setup is required. MASTER executes the sequence and owns all timers; phone timers never turn relays OFF. STOP stays visible. Without hardware, the app opens and allows sequence browsing, reports OFFLINE honestly and disables START.
 
 The original [Memozzz/Tubatech](https://github.com/Memozzz/Tubatech) repository is unchanged. This repository is independent. See [provenance and attribution](NOTICE.md).
@@ -27,11 +29,11 @@ W_B drives V2/V3 on Slave 1 GPIO16/17 and PUMP_1 on Slave 2 GPIO16 for **30 seco
 |---|---|---|---|
 | MASTER | `38:18:2B:8A:9D:30` | `01_MASTER/TubaTech_Integrated_Master` | 11 |
 | SLAVE 1 | `68:25:DD:F1:A3:78` | `02_SLAVE1/TubaTech_Integrated_Slave1` | 14 |
-| SLAVE 2 | `58:2A:BD:D3:08:F4` | `03_SLAVE2/TubaTech_Integrated_Slave2` | 14 |
+| SLAVE 2 | `20:50:0D:8C:80:C4` | `03_SLAVE2/TubaTech_Integrated_Slave2` | 14 |
 | SLAVE 3 | `78:1C:3C:A5:50:80` | `04_SLAVE3/TubaTech_Integrated_Slave3` | 14 |
 | SLAVE 4 | `38:3E:51:D4:6A:30` | `05_SLAVE4/TubaTech_Integrated_Slave4` | 13 |
 
-Fixed **Wi-Fi and ESP-NOW channel 6**. MASTER AP: `TubaTech_Master`; local API: `http://192.168.4.1`. Slave 2's complete MAC, including `:F4`, comes from the linked upstream wiring guide. Each image checks its board identity. Do not mix board images or legacy 16-byte radio packets with this 20-byte V3 protocol.
+Fixed **Wi-Fi and ESP-NOW channel 6**. MASTER AP: `TubaTech_Master`; local API: `http://192.168.4.1`. Slave 2's replacement station MAC was supplied by the user on 8 November 2026; the original output assignments stay on S2. Each image checks its board identity. Do not mix board images or legacy 16-byte radio packets with this 20-byte V3 protocol.
 
 Outputs start OFF before radio initialization. Every output command needs an application ACK. MASTER command ACK timeout: **1200 ms**. Slave communication watchdog: outputs OFF after **2500 ms** without accepted MASTER traffic. STOP shuts mapped pumps OFF before ALL_OFF on required boards. A STOP epoch rejects a delayed earlier START. An unrelated offline slave does not block a sequence that does not use it. If the phone disconnects after START, MASTER retains its finite timer and shutdown; losing a required slave faults the operation. Fault reset verifies OFF and never restarts automatically.
 

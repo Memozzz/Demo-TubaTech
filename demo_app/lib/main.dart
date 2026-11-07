@@ -72,8 +72,10 @@ class _ControlScreenState extends State<ControlScreen> {
     final s = c.connected ? c.status : null;
     final mappings = ((s?['profile'] as Map?)?['mappings'] as List? ?? []);
     final active = mappings
-      .where((m) => (m as Map)['acknowledged_on'] == true).map((m) => (m as Map)['component']).join(', ');
-    final unverified = mappings.where((m) => (m as Map)['acknowledged_on'] == null)
+      .where((m) => (m as Map)['skipped'] != true && m['acknowledged_on'] == true).map((m) => (m as Map)['component']).join(', ');
+    final unverified = mappings.where((m) => (m as Map)['skipped'] != true && m['acknowledged_on'] == null)
+      .map((m) => (m as Map)['component']).join(', ');
+    final skipped = mappings.where((m) => (m as Map)['skipped'] == true)
       .map((m) => (m as Map)['component']).join(', ');
     final remaining = ((s?['remaining_ms'] as num?)?.toDouble() ?? 0) / 1000;
     return Scaffold(
@@ -90,20 +92,26 @@ class _ControlScreenState extends State<ControlScreen> {
         Wrap(spacing: 6, runSpacing: 4, children: List.generate(5, (id) {
           final board = c.boards.where((b) => b['node_id'] == id).firstOrNull;
           final ready = board?['ready'] == true;
-          final label = ready ? 'READY' : board?['session_verified'] == true ? 'NOT READY' : 'OFFLINE';
+          final label = c.excludedOwners.contains(id) ? 'NOT INSTALLED' : ready ? 'READY' : board?['session_verified'] == true ? 'NOT READY' : 'OFFLINE';
           return Chip(avatar: Icon(Icons.circle, size: 10, color: ready ? Colors.tealAccent : Colors.grey),
             label: Text('${boardNames[id]} · $label', style: const TextStyle(fontSize: 11)));
         })),
+        if (c.partialDemo) Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(
+          'PARTIAL DEMO${c.connected ? '' : ' · offline preview'}: ${c.excludedOwners.map((id) => boardNames[id]).join(', ')} NOT INSTALLED. ${c.skipUnreadyAtStart ? 'START skips other missing boards; timers continue.' : 'Excluded actions SKIPPED / NOT EXECUTED.'}',
+          style: const TextStyle(color: Colors.orangeAccent))),
         const SizedBox(height: 14),
         section('Live execution', [
           Text(s == null ? 'No live hardware status' : '${s['active_function']} · ${s['state']}',
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          if (s?['partial_completion'] == true) const Text('PARTIAL DEMO COMPLETE · skipped outputs NOT EXECUTED',
+            style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(s == null || s['busy'] != true ? 'Step: —' : 'Step ${(s['phase_index'] as num).toInt() + 1}: ${s['phase']}'),
           Text(s == null ? 'Countdown: —' : s['busy'] == true && s['state'] != 'RUNNING'
             ? 'Waiting for output ACKs' : 'Countdown: ${remaining.ceil()} s', style: const TextStyle(fontSize: 24)),
           Text(s == null ? 'Active components: unknown' : 'Acknowledged ON: ${active.isEmpty ? 'none' : active}'),
           if (unverified.isNotEmpty) Text('Pending / unverified: $unverified'),
+          if (skipped.isNotEmpty) Text('SKIPPED / NOT EXECUTED: $skipped', style: const TextStyle(color: Colors.orangeAccent)),
           if (s != null) const Text('GPIO acknowledgements; physical contact state is unmeasured.', style: TextStyle(fontSize: 11)),
           if (c.fault) Padding(padding: const EdgeInsets.only(top: 8), child: Text('FAULT: ${s?['reason']}',
             style: const TextStyle(color: Colors.orangeAccent))),
@@ -123,6 +131,8 @@ class _ControlScreenState extends State<ControlScreen> {
             child: Text(selected['note'] as String, style: const TextStyle(fontSize: 12))),
           const SizedBox(height: 8),
           Text('Required: ${c.requiredOwners(selected).toList().map((id) => boardNames[id]).join(', ')}'),
+          if (c.skippedComponents(selected).isNotEmpty) Text('SKIPPED / NOT EXECUTED: ${c.skippedComponents(selected).join(', ')}',
+            style: const TextStyle(color: Colors.orangeAccent)),
         ]),
         const SizedBox(height: 14),
         section('Sequence steps · fixed wiring', [
@@ -155,7 +165,9 @@ class _ControlScreenState extends State<ControlScreen> {
   Widget actionRow(Map action) {
     final name = action['component'];
     final map = c.components.firstWhere((m) => m['component'] == name);
+    final skipped = c.componentSkipped(name as String);
     return Padding(padding: const EdgeInsets.only(top: 5), child: Text(
-      '${action['on'] == true ? 'ON' : 'OFF'}  $name · ${boardNames[map['node_id'] as int]} GPIO${map['gpio']} · R${map['relay_module'].toString().padLeft(2, '0')} IN${map['relay_input']}'));
+      '${skipped ? 'SKIPPED / NOT EXECUTED: ' : ''}${action['on'] == true ? 'ON' : 'OFF'}  $name · ${boardNames[map['node_id'] as int]} GPIO${map['gpio']} · R${map['relay_module'].toString().padLeft(2, '0')} IN${map['relay_input']}',
+      style: skipped ? const TextStyle(color: Colors.orangeAccent) : null));
   }
 }

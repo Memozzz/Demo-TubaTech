@@ -43,7 +43,8 @@ void main() {
     expect(c.functions.length, 34);
     expect(c.functions.where((f) => f['executable'] == true).length, 30);
     final wb = c.functions.firstWhere((f) => f['id'] == 'W_B');
-    expect(c.requiredOwners(wb), {1, 2});
+    expect(c.assignedOwners(wb), {1, 2});
+    expect(c.requiredOwners(wb), {1, 2}); // Replacement S2 is configured again.
     expect(wb['phases'][0]['seconds'], 30);
     final v2 = c.components.firstWhere((m) => m['component'] == 'V2');
     expect([v2['node_id'], v2['gpio']], [1, 16]);

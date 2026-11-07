@@ -24,7 +24,7 @@ inline void openPair(bool admin){
 inline bool beginWifi(){
   Preferences prefs;if(!prefs.begin("tubatech-v2",false))return false;
   std::string storedMac=prefs.getString("slave4_mac","").c_str();uint8_t mac[6];
-  if(storedMac=="38:3E:51:D4:6A:30"&&nodecfg::parseMac(storedMac,mac)&&nodecfg::validSlave4(mac)){memcpy(nodecfg::positions[3].mac,mac,6);nodecfg::positions[3].installed=true;}
+  if(storedMac=="38:3E:51:D4:6A:30"&&nodecfg::parseMac(storedMac,mac)&&nodecfg::validSlave4(mac)){memcpy(nodecfg::positions[3].mac,mac,6);nodecfg::positions[3].installed=!demo::boardExcluded(4);}
   // Configure at build time; normal operation never requires Serial setup.
   apPassword=TUBATECH_AP_PASSWORD;
   if(apPassword.size()<8||apPassword.size()>63)return false;

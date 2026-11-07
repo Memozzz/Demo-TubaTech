@@ -9,21 +9,31 @@ inline Access access;
 // A STOP fences any START already in flight over another HTTP connection.
 // The phone must use the epoch from its latest live status. STOP needs no epoch.
 inline uint32_t stopEpoch=1;
+inline std::string excludedBoardsJson(uint8_t mask=demo::excludedNodeMask()){
+  std::string out="[";bool first=true;
+  for(uint8_t owner=1;owner<=4;++owner)if(mask&(1U<<(owner-1))){if(!first)out+=',';first=false;out+=std::to_string(owner);}
+  return out+"]";
+}
+inline std::string partialSettingsJson(){
+  return "\"skip_unready_at_start\":"+std::string(demo::PARTIAL_DEMO_ENABLED&&demo::SKIP_UNREADY_AT_START?"true":"false")+",\"partial_demo_supported\":true,\"partial_demo_enabled\":"+std::string(demo::PARTIAL_DEMO_ENABLED?"true":"false")+
+    ",\"excluded_board_ids\":"+excludedBoardsJson();
+}
 inline std::string statusJson(){
-  std::string out="{\"demo_control_version\":1,\"stop_epoch\":"+std::to_string(stopEpoch)+",\"direct_demo_start_supported\":true,\"wifi_connect_supported\":true,\"phone_bench_arm_supported\":true,\"channel_test_active\":"+std::string(channelTest.busy()?"true":"false")+",\"catalog_version\":\"final-66-2026-10-19\",\"layout_id\":\"five-board-fixed-v1\",\"hardware_verified\":false,\"bench_node_mask\":"+std::to_string(engine.benchMask())+",\"required_node_mask\":"+std::to_string(engine.requiredMask())+",\"boot_id\":"+std::to_string(sessionID)+",\"mode\":\"FIXED RELAY TIMED CONTROL\",\"state\":"+quote(demo::SequenceEngine::stageName(engine.stage()))+
+  std::string out="{"+partialSettingsJson()+",\"skipped_board_ids\":"+excludedBoardsJson(engine.profile().skippedNodes)+",\"partial_completion\":"+(engine.partialCompletion()?"true":"false")+",\"skipped_action_count\":"+std::to_string(engine.skippedActions())+",\"all_off_scope\":"+quote(demo::PARTIAL_DEMO_ENABLED?"PARTICIPATING BOARDS ONLY":"REQUIRED BOARDS")+",\"demo_control_version\":1,\"stop_epoch\":"+std::to_string(stopEpoch)+",\"direct_demo_start_supported\":true,\"wifi_connect_supported\":true,\"phone_bench_arm_supported\":true,\"channel_test_active\":"+std::string(channelTest.busy()?"true":"false")+",\"catalog_version\":\"final-66-2026-10-19\",\"layout_id\":\"five-board-fixed-v1\",\"hardware_verified\":false,\"bench_node_mask\":"+std::to_string(engine.benchMask())+",\"required_node_mask\":"+std::to_string(engine.requiredMask())+",\"boot_id\":"+std::to_string(sessionID)+",\"mode\":\"FIXED RELAY TIMED CONTROL\",\"state\":"+quote(engine.stateName())+
     ",\"active_function\":"+quote(engine.activeName())+",\"phase\":"+quote(engine.phaseName())+",\"phase_index\":"+std::to_string(engine.phaseIndex())+
     ",\"remaining_ms\":"+std::to_string(engine.remainingMs(millis()))+",\"busy\":"+(engine.busy()||channelTest.busy()?"true":"false")+
     ",\"fault\":"+(engine.faulted()?"true":"false")+",\"reason\":"+quote(engine.reason())+",\"recovering\":"+(recovering?"true":"false")+
     ",\"bench_armed\":"+(engine.benchArmed()?"true":"false")+",\"all_off_verified\":"+(engine.readyOff(millis())?"true":"false")+",\"nodes\":[";
   for(uint8_t i=0;i<demo::ACTIVE_NODES;++i){if(i)out+=',';const auto &n=nodes[i];
-    out+="{\"session_verified\":"+std::string(n.synced&&!n.isolated?"true":"false")+",\"outputs_armed\":"+std::string(n.outputsArmed?"true":"false")+",\"installed\":"+std::string(n.installed?"true":"false")+",\"mac\":"+quote(n.installed?nodecfg::macText(n.mac):"UNPROVISIONED")+",\"status\":"+quote(!n.installed?"NOT INSTALLED":masterIO.ready(i,millis())?"READY":n.synced?"SESSION VERIFIED / OUTPUTS DISARMED":"OFFLINE / UNVERIFIED")+",\"node_id\":"+std::to_string(integrated::ownerForIndex(i))+",\"name\":"+quote(n.name)+",\"ready\":"+(masterIO.ready(i,millis())?"true":"false")+
+    out+="{\"unsafe_for_start\":"+std::string((masterIO.unsafeNodes()&(1U<<i))?"true":"false")+",\"excluded\":"+std::string(demo::nodeExcluded(i)?"true":"false")+",\"session_verified\":"+std::string(n.synced&&!n.isolated?"true":"false")+",\"outputs_armed\":"+std::string(n.outputsArmed?"true":"false")+",\"installed\":"+std::string(n.installed?"true":"false")+",\"mac\":"+quote(nodecfg::macText(n.mac))+",\"status\":"+quote(!n.installed?"NOT INSTALLED":masterIO.ready(i,millis())?"READY":n.synced?"SESSION VERIFIED / OUTPUTS DISARMED":"OFFLINE / UNVERIFIED")+",\"node_id\":"+std::to_string(integrated::ownerForIndex(i))+",\"name\":"+quote(n.name)+",\"ready\":"+(masterIO.ready(i,millis())?"true":"false")+
       ",\"isolated\":"+(n.isolated?"true":"false")+",\"pending\":"+(n.waiting?"true":"false")+",\"command_uncertain\":"+((n.uncertainMask||(n.waiting&&n.pendingType==SET_RELAY))?"true":"false")+",\"last_ack_age_ms\":"+(n.lastACK?std::to_string(uint32_t(millis()-n.lastACK)):"null")+",\"acknowledged_mask\":"+(masterIO.ready(i,millis())&&!n.uncertainMask?std::to_string(n.stateMask):"null")+"}";
   }
   const auto &p=engine.profile();
   out+="],\"profile\":{\"function\":"+quote(p.function<0?"none":demo::functions[p.function].id)+",\"revision\":"+std::to_string(p.revision)+",\"confirmed\":"+(p.confirmed?"true":"false")+",\"mappings\":[";
   for(size_t i=0;i<p.count;++i){if(i)out+=',';const auto &c=p.slots[i];const auto &n=nodes[c.node];
-    const bool verified=masterIO.ready(c.node,millis())&&!n.waiting;
-    out+="{\"component\":"+quote(c.name)+",\"category\":"+quote(c.category)+",\"node_id\":"+std::to_string(integrated::ownerForIndex(c.node))+",\"board\":"+quote(n.name)+",\"channel\":"+std::to_string(c.channel)+",\"gpio\":"+std::to_string(c.gpio)+",\"relay_module\":"+std::to_string(c.module)+",\"relay_input\":"+std::to_string(c.relayInput)+
+    const bool skipped=p.skips(c.node);
+    const bool verified=!skipped&&masterIO.ready(c.node,millis())&&!n.waiting;
+    out+="{\"skipped\":"+std::string(p.skips(c.node)?"true":"false")+",\"execution\":"+quote(p.skips(c.node)?"SKIPPED / NOT EXECUTED":"PARTICIPATING")+",\"component\":"+quote(c.name)+",\"category\":"+quote(c.category)+",\"node_id\":"+std::to_string(integrated::ownerForIndex(c.node))+",\"board\":"+quote(n.name)+",\"channel\":"+std::to_string(c.channel)+",\"gpio\":"+std::to_string(c.gpio)+",\"relay_module\":"+std::to_string(c.module)+",\"relay_input\":"+std::to_string(c.relayInput)+
       ",\"mapping_verified\":"+(c.mappingVerified?"true":"false")+",\"installed_equipment\":false,\"commanded_on\":"+(masterIO.ready(c.node,millis())?(((n.waiting?n.expectedMask:n.stateMask)&(1U<<c.channel))?"true":"false"):"null")+",\"acknowledged_on\":"+(verified?((n.stateMask&(1U<<c.channel))?"true":"false"):"null")+",\"command_pending\":"+(n.waiting?"true":"false")+"}";
   }
   out+="],\"off_only_modeled\":[";bool first=true;
@@ -39,21 +49,21 @@ inline size_t requiredChannels(const demo::FunctionDefinition &f){
   return names.size();
 }
 inline std::string functionsJson(){
-  std::string out="{\"functions\":[";
+  std::string out="{"+partialSettingsJson()+",\"functions\":[";
   for(size_t i=0;i<demo::FUNCTION_COUNT;++i){if(i)out+=',';const auto &f=demo::functions[i];demo::BenchProfile p;
-    bool capacity=f.status==demo::DefinitionStatus::RelayDemo&&p.build(f,engine.benchMask()&masterIO.configuredMask());
+    bool capacity=f.status==demo::DefinitionStatus::RelayDemo&&p.build(f,engine.benchMask()&masterIO.configuredMask(),engine.exclusionsForStart(millis()));
     unsigned available=0;for(unsigned n=0;n<5;++n)if((engine.benchMask()&masterIO.configuredMask())&(1U<<n))available+=integrated::channelCount(integrated::ownerForIndex(uint8_t(n)));
-    out+="{\"capacity_error\":"+std::string(f.status==demo::DefinitionStatus::RelayDemo&&!capacity?"true":"false")+",\"available_channels\":"+std::to_string(available)+",\"real_executable\":false,\"real_blocked_reason\":\"Loaded operation disabled; relay interface, startup and safety validation pending\",\"id\":"+quote(f.id)+",\"title\":"+quote(f.title)+",\"status\":"+quote(definitionStatus(f.status))+",\"executable\":"+(capacity?"true":"false")+",\"note\":"+quote(f.note)+",\"required_channels\":"+std::to_string(requiredChannels(f))+",\"phases\":[";
+    out+="{\"partial_demo\":"+std::string(capacity&&p.skippedActionCount?"true":"false")+",\"skipped_action_count\":"+std::to_string(capacity?p.skippedActionCount:0)+",\"required_node_mask\":"+std::to_string(capacity?p.requiredMask:0)+",\"capacity_error\":"+std::string(f.status==demo::DefinitionStatus::RelayDemo&&!capacity?"true":"false")+",\"available_channels\":"+std::to_string(available)+",\"real_executable\":false,\"real_blocked_reason\":\"Loaded operation disabled; relay interface, startup and safety validation pending\",\"id\":"+quote(f.id)+",\"title\":"+quote(f.title)+",\"status\":"+quote(definitionStatus(f.status))+",\"executable\":"+(capacity?"true":"false")+",\"note\":"+quote(f.note)+",\"required_channels\":"+std::to_string(requiredChannels(f))+",\"phases\":[";
     for(size_t phase=0;phase<f.phaseCount;++phase){if(phase)out+=',';const auto &s=f.phases[phase];
       out+="{\"name\":"+quote(s.name)+",\"seconds\":"+std::to_string(engine.duration(i,phase)/1000)+",\"actions\":[";
-      for(size_t a=0;a<s.count;++a){if(a)out+=',';out+="{\"component\":"+quote(s.actions[a].component)+",\"on\":"+(s.actions[a].on?"true":"false")+"}";}out+="]}";
+      for(size_t a=0;a<s.count;++a){if(a)out+=',';const auto *component=demo::find(s.actions[a].component);const bool skip=component&&p.skips(component->node);out+="{\"skipped\":"+std::string(skip?"true":"false")+",\"execution\":"+quote(skip?"SKIPPED / NOT EXECUTED":"PARTICIPATING")+",\"component\":"+quote(s.actions[a].component)+",\"on\":"+(s.actions[a].on?"true":"false")+"}";}out+="]}";
     }out+="]}";
   }return out+"]}";
 }
 inline std::string componentsJson(){
-  std::string out="{\"components\":[";bool first=true;
+  std::string out="{"+partialSettingsJson()+",\"components\":[";bool first=true;
   for(const auto &c:demo::components){if(!first)out+=',';first=false;
-    out+="{\"component\":"+quote(c.name)+",\"category\":"+quote(c.category)+",\"node_id\":"+std::to_string(integrated::ownerForIndex(c.node))+",\"output_index\":"+std::to_string(c.channel)+",\"gpio\":"+(c.gpio<0?"null":std::to_string(c.gpio))+",\"driver\":"+quote(c.driver==1?"PROPOSED DirectGPIO":"UNSUPPORTED")+",\"address\":"+(c.address?std::to_string(c.address):"null")+",\"driver_channel\":"+std::to_string(c.driverChannel)+",\"relay_module\":"+std::to_string(c.module)+",\"relay_input\":"+std::to_string(c.relayInput)+",\"assignment_status\":\"PROPOSED\",\"installed\":false,\"mapping_verified\":false,\"driver_available\":false,\"commanded_on\":null}";
+    out+="{\"skipped\":"+std::string(demo::nodeExcluded(c.node)?"true":"false")+",\"execution\":"+quote(demo::nodeExcluded(c.node)?"SKIPPED / NOT EXECUTED":"PARTICIPATING")+",\"component\":"+quote(c.name)+",\"category\":"+quote(c.category)+",\"node_id\":"+std::to_string(integrated::ownerForIndex(c.node))+",\"output_index\":"+std::to_string(c.channel)+",\"gpio\":"+(c.gpio<0?"null":std::to_string(c.gpio))+",\"driver\":"+quote(c.driver==1?"PROPOSED DirectGPIO":"UNSUPPORTED")+",\"address\":"+(c.address?std::to_string(c.address):"null")+",\"driver_channel\":"+std::to_string(c.driverChannel)+",\"relay_module\":"+std::to_string(c.module)+",\"relay_input\":"+std::to_string(c.relayInput)+",\"assignment_status\":\"PROPOSED\",\"installed\":false,\"mapping_verified\":false,\"driver_available\":false,\"commanded_on\":null}";
 
   }return out+"]}";
 }
@@ -120,7 +130,7 @@ inline Reply handle(const Request &r){
     const bool direct=r.apClient||get(f,"direct")=="true";
     if(direct?!engine.startDemo(index,millis()):(!number(get(f,"revision"),revision)||revision!=engine.profile().revision||!engine.start(index,millis())))
       return reply(409,"START blocked: required controllers must respond with outputs OFF; check pending function, active operation or latched fault");
-    return reply(202,"START accepted; follow actual Master state");
+    return reply(202,engine.profile().skippedActionCount?"START accepted: PARTIAL DEMO; excluded actions SKIPPED / NOT EXECUTED":"START accepted; follow actual Master state");
   }
   if(r.path=="/api/demo/duration"){
     uint32_t seconds=0,phase=0;

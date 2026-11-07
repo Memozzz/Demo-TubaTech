@@ -1,4 +1,7 @@
 #define TUBATECH_HOST_TEST
+#if !defined(TUBATECH_TEST_PARTIAL_DEMO) && !defined(TUBATECH_TEST_CURRENT_CONFIG)
+#define TUBATECH_TEST_FULL_DEMO
+#endif
 #include <cassert>
 #include <new>
 #include <fstream>
@@ -26,12 +29,13 @@ static void boot(bool arm=true){
   if(rxQueue){delete rxQueue;rxQueue=nullptr;}
   engine.~SequenceEngine();new(&engine)demo::SequenceEngine(masterIO);channelTest=ChannelTest{};
   for(unsigned i=0;i<5;++i){Node fresh={nodes[i].name,{}};memcpy(fresh.mac,integrated::macs[integrated::ownerForIndex(uint8_t(i))],6);nodes[i]=fresh;}
-  for(unsigned i=0;i<4;++i){remoteBanks[i].begin();online[i]=true;}
+  for(unsigned i=0;i<4;++i){remoteBanks[i].begin();online[i]=!demo::nodeExcluded(uint8_t(i));}
   localBank.begin();radioReady=recovering=serialOverflow=rxOverflow=false;serialLine="";mockNow=100;mockStationMac="38:18:2B:8A:9D:30";mockSends.clear();mockPeers.clear();Serial.output.clear();consumed=0;dropNode=dropType=corruptNode=corruptType=-1;mockSendFailure=false;heartbeatCount=0;
-  setup();drive(20);assert(mockPeers.size()==4);for(const auto &n:nodes)assert(n.synced&&n.outputsArmed==bool(TUBATECH_MASTER_ONLY_UNLOADED_ARM));
+  setup();drive(20);size_t peers=0;for(unsigned i=0;i<4;++i)if(nodes[i].installed)++peers;
+  assert(mockPeers.size()==peers);for(const auto &n:nodes)if(n.installed)assert(n.synced&&n.outputsArmed==bool(TUBATECH_MASTER_ONLY_UNLOADED_ARM));else assert(!n.synced&&!n.outputsArmed);
   // Explicitly model a disarmed bank independently of the configured boot policy.
   if(!arm){for(auto &b:remoteBanks)b.enabled=false;localBank.enabled=false;drive(90);for(const auto &n:nodes)assert(!n.outputsArmed);}
-  if(arm){for(auto &b:remoteBanks)assert(b.arm());assert(localBank.arm());drive(90);for(uint8_t i=0;i<5;++i)assert(masterIO.ready(i,mockNow));}
+  if(arm){for(unsigned i=0;i<4;++i)if(nodes[i].installed)assert(remoteBanks[i].arm());assert(localBank.arm());drive(90);for(uint8_t i=0;i<5;++i)assert(masterIO.ready(i,mockNow)==nodes[i].installed);}
 }
 static void off(){for(const auto &b:remoteBanks)assert(!b.commanded);assert(!localBank.commanded);}
 static void prepare(const char *name){handleCommand("BENCH ARM UNLOADED");assert(engine.loadProfile(demo::functionIndex(name),mockNow));assert(engine.confirmProfile(engine.profile().revision,true,mockNow));}
@@ -160,4 +164,4 @@ static void backflushMappingAndTimers(){
   }
   puts("PASS: W_D/W_H/W_L full 15s + 15s timings, accumulated valve/pump masks, pump OFF between phases, final all OFF");
 }
-int main(){functionsAndStop();transportFaults();individualAndApi();wifiPhoneWorkflow();directPhoneStart();stopFencesDelayedStart();backflushMappingAndTimers();puts("PASS: actual integrated Master + real bank adapter: 30 functions, 132 STOP checkpoints over 33 phases, all 66 single-channel tests, four peers, local outputs, W_B pins, API gates, required/optional loss, ACK faults and watchdog OFF (host GPIO/radio stubs)");}
+int main(){functionsAndStop();transportFaults();individualAndApi();wifiPhoneWorkflow();directPhoneStart();stopFencesDelayedStart();backflushMappingAndTimers();puts("PASS: actual integrated Master + real bank adapter: 30 functions, 132 STOP checkpoints over 33 phases, all 66 single-channel tests, four peers, local outputs, W_B pins, API gates, required/optional loss, ACK faults and watchdog OFF (host GPIO/radio stubs)");return 0;}

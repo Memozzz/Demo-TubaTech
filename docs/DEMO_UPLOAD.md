@@ -1,4 +1,6 @@
-# Demonstration package — 1.0.3
+# Demonstration upload guide
+
+**Current firmware update (8 November 2026):** replacement S2 is enabled at `20:50:0D:8C:80:C4`. Use [direct MASTER instructions](MASTER_DIRECT.md) for app-free operation and the new matching five-sketch package. The app/release notes below describe the earlier 1.0.3 baseline.
 
 **Hardware has not been tested.** This package completes the software preparation only. Keep the original TubaTech app installed; Demo TubaTech uses `com.tubatech.demo`.
 
@@ -10,13 +12,13 @@ For the initial five-board demonstration, upload **all five matching firmware im
 |---|---|---|---|
 | MASTER | `38:18:2B:8A:9D:30` | `MASTER_38182B8A9D30.merged.bin` | [MASTER .ino](../firmware/01_MASTER/TubaTech_Integrated_Master/TubaTech_Integrated_Master.ino) |
 | SLAVE 1 | `68:25:DD:F1:A3:78` | `SLAVE1_6825DDF1A378.merged.bin` | [Slave 1 .ino](../firmware/02_SLAVE1/TubaTech_Integrated_Slave1/TubaTech_Integrated_Slave1.ino) |
-| SLAVE 2 | `58:2A:BD:D3:08:F4` | `SLAVE2_582ABDD308F4.merged.bin` | [Slave 2 .ino](../firmware/03_SLAVE2/TubaTech_Integrated_Slave2/TubaTech_Integrated_Slave2.ino) |
+| SLAVE 2 | `20:50:0D:8C:80:C4` | `SLAVE2_20500D8C80C4.merged.bin` | [Slave 2 .ino](../firmware/03_SLAVE2/TubaTech_Integrated_Slave2/TubaTech_Integrated_Slave2.ino) |
 | SLAVE 3 | `78:1C:3C:A5:50:80` | `SLAVE3_781C3CA55080.merged.bin` | [Slave 3 .ino](../firmware/04_SLAVE3/TubaTech_Integrated_Slave3/TubaTech_Integrated_Slave3.ino) |
 | SLAVE 4 | `38:3E:51:D4:6A:30` | `SLAVE4_383E51D46A30.merged.bin` | [Slave 4 .ino](../firmware/05_SLAVE4/TubaTech_Integrated_Slave4/TubaTech_Integrated_Slave4.ino) |
 
 The five compiled images, their SHA-256 hashes and the privately configured Wi-Fi password are provided in the **local-only bundle**. `PRIVATE-WIFI.txt` contains the password; do not publish it, `wifi_config.h`, or the MASTER image. The MASTER image embeds the credential. GitHub release assets therefore contain the APK, source archive, this guide and software verification manifest, without credential-bearing binaries. To rebuild elsewhere, create your own ignored Wi-Fi configuration as described in [README](../README.md).
 
-Firmware source, wiring and sequence behavior are unchanged from `70e5a701`; the HTTP POST correction is in the app. A board already running these exact matching images does not need reflashing solely for the app update. Actual installed firmware and upload completion are **not verified** while hardware is absent.
+The HTTP POST correction was app-only. The current firmware update changes S2's identity and missing-board handling; MASTER and replacement S2 require the new matching sketches. Wiring and sequence actions/durations are unchanged. Actual installed firmware and upload completion are **not verified** while hardware is absent.
 
 ## Phone installation and normal use
 

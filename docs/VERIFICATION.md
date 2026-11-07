@@ -1,5 +1,17 @@
 # Verification report
 
+## Direct MASTER and replacement S2 - 8 November 2026
+
+S2 is enabled at user-supplied station MAC `20:50:0D:8C:80:C4`. Production exclusions are empty; safe missing-at-START skipping remains enabled. The earlier explicit-S2-absence suite now uses a host-only override. A local recoverable snapshot preserves the previous uncommitted work.
+
+Completed software checks: current production configuration verifies five modelled board sessions; read-only NODES reports role/MAC/readiness/ACK age; Serial START runs W_B for its full 30 seconds with S1 GPIO16/17 and replacement S2 GPIO16, followed by acknowledged shutdown. All 30 executable functions pass Serial dispatch; W_D/W_H/W_L retain both full 15-second phases. Serial STOP during activation/timing, RESET without restart, missing-at-start S2, MASTER-only execution, and unexpected participating S2 loss are covered. Full-mode and explicit-exclusion regressions remain passing; generated definitions and original 66-output/sequence fingerprints pass. These tests use host radio/GPIO stubs, not physical boards.
+
+The matching five ESP32 sketches are compiled with Arduino-ESP32 3.3.12. All 20 Flutter regression tests, including real HTTP START/STOP/RESET framing, pass after regeneration. No app code change or Android rebuild is needed for direct Serial operation. Power stability, physical uploads/boot, all four live slave replies, relay movements and measured timing remain pending. See [direct commands and board-specific sketches](MASTER_DIRECT.md).
+
+## Partial demo update — 30 October 2026
+
+See [the partial-demo report](PARTIAL_DEMO.md) for the focused changes, coverage and upload scope. Explicitly excluded S2 actions are skipped without remapping; following the later request, START also snapshots and skips other slaves missing at that moment. Tests cover Master-only W_B timing, late-board return only on the next START, W_B without S2, a fully skipped 30-second V_C1 phase, unaffected W_F, all 30 relay functions, STOP/RESET/recovery, unsafe-output rejection, stale replies and participating-node loss/missing or invalid ACKs. All 20 Flutter tests pass. The full-mode baseline and original sequence/wiring fingerprints are retained. Physical relay testing of this update is pending.
+
 Software checks completed on 22 October 2026. No boards or relays were connected. The reviewed commit is the commit targeted by the release; reviewers can use the release tag or `git rev-parse HEAD` to inspect the exact source.
 
 ## Demonstration preparation — 1.0.3 (build 4)

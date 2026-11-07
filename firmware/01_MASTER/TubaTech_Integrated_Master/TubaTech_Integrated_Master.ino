@@ -39,7 +39,7 @@ Node nodes[] = {
   {"SECONDARY",
    {0x68, 0x25, 0xDD, 0xF1, 0xA3, 0x78}},
   {"TETRIARY",
-   {0x58, 0x2A, 0xBD, 0xD3, 0x08, 0xF4}},
+   {0x20, 0x50, 0x0D, 0x8C, 0x80, 0xC4}},
   {"SLAVE 3",{0x78,0x1C,0x3C,0xA5,0x50,0x80}},
   {"SLAVE 4",{0x38,0x3E,0x51,0xD4,0x6A,0x30}},
   {"MASTER LOCAL",{0x38,0x18,0x2B,0x8A,0x9D,0x30}}
@@ -87,7 +87,7 @@ void onReceive(const esp_now_recv_info_t *info,
                const uint8_t *data, int len) {
   radio_diag::observeRx(info,data,len);
   if (!info || !data || len != sizeof(Packet) || !rxQueue) return;
-  bool known=false;for(unsigned i=0;i<4;++i)if(!memcmp(info->src_addr,nodes[i].mac,6))known=true;
+  bool known=false;for(unsigned i=0;i<4;++i)if(nodes[i].installed&&!(engine.busy()&&engine.profile().skips(uint8_t(i)))&&!memcmp(info->src_addr,nodes[i].mac,6))known=true;
   if(!known)return;
 
   Received r;
@@ -104,6 +104,7 @@ bool sendCommand(int nodeIndex, uint8_t type,
   if (!radioReady || nodeIndex < 0 || nodeIndex >= int(demo::ACTIVE_NODES)) return false;
   Node &n = nodes[nodeIndex];
   if (!n.installed || n.waiting || n.isolated || n.sequence == UINT32_MAX) return false;
+  if(engine.busy()&&engine.profile().skips(uint8_t(nodeIndex)))return false;
   if(type==SET_RELAY&&value&&n.uncertainMask)return false;
   if (type == SET_RELAY && (!n.synced || channel >= 14 || !(integrated::bankMask(integrated::ownerForIndex(uint8_t(nodeIndex)))&(1U<<channel)) || value > 1)) return false;
   Packet p = {MAGIC, sessionID, ++n.sequence, type, channel, value, 0};
@@ -160,12 +161,14 @@ demo::SendResult MasterIO::allOff(uint8_t node, uint32_t &ticket) {
 }
 demo::AckResult MasterIO::acknowledgement(uint8_t node, uint32_t ticket) const {
   const Node &n = nodes[node];
+  if(!n.installed||(engine.busy()&&engine.profile().skips(node)))return demo::AckResult::Failed;
   if (n.failed == ticket || n.isolated) return demo::AckResult::Failed;
   if (n.completed == ticket) return demo::AckResult::Verified;
   return demo::AckResult::Pending;
 }
 void MasterIO::cancelPending() {
   for (Node &n : nodes) {
+    if(!n.installed)continue;
     if (n.waiting) {
       n.failed = n.pendingSequence;
       // STOP retires the ticket, not the possible execution of that command.
@@ -178,6 +181,7 @@ void MasterIO::cancelPending() {
 }
 void MasterIO::quarantine(uint8_t node, uint32_t) {
   Node &n = nodes[node];
+  if(!n.installed)return;
   if (n.waiting) n.failed = n.pendingSequence;
   n.waiting = false;
   // Best effort priority OFF, then NO further packets: local watchdog is backup.
@@ -193,6 +197,7 @@ bool MasterIO::quarantined(uint8_t node) const { return nodes[node].isolated; }
 
 void networkFault(int node, const char *reason,bool connectivity=false) {
   Node &n=nodes[node];
+  if(!n.installed)return;
   if(connectivity&&!engine.ownsNode(uint8_t(node))&&!n.stateMask&&n.pendingType!=SET_RELAY&&n.pendingType!=ALL_OFF){
     n.failed=n.pendingSequence;n.waiting=n.synced=n.confirmNeeded=false;n.retryAt=millis()+2000;
     Serial.printf("[%s] OFFLINE (unused); other operations remain available\n",n.name);return;
@@ -211,7 +216,7 @@ void processReplies() {
   for (int count=0; count<20 && rxQueue && xQueueReceive(rxQueue, &r, 0) == pdTRUE; ++count) {
     for (uint8_t i = 0; i < demo::ACTIVE_NODES; ++i) {
       Node &n = nodes[i];
-      if (!n.installed || memcmp(r.sender, n.mac, 6) != 0 || r.packet.session != sessionID ||
+      if (!n.installed || (engine.busy()&&engine.profile().skips(i)) || memcmp(r.sender, n.mac, 6) != 0 || r.packet.session != sessionID ||
           !n.waiting || r.packet.sequence != n.pendingSequence || n.isolated || r.packet.owner!=integrated::ownerForIndex(i)) continue;
       if (r.packet.type == CHALLENGE && n.pendingType == SYNC) {
         n.nonce = uint32_t(r.packet.channel) | (uint32_t(r.packet.value)<<8) | (uint32_t(r.packet.stateMask)<<16);
@@ -246,10 +251,21 @@ void printStatus() {
   Serial.println(local::statusJson().c_str());
 }
 
+void printNodes() {
+  Serial.println("BOARD LINKS: channel 6; READY requires verified application replies, not just radio delivery");
+  for(uint8_t i=0;i<demo::ACTIVE_NODES;++i){
+    const auto &n=nodes[i];
+    Serial.printf("%s | %s | %s | last_ACK_ms=",n.name,nodecfg::macText(n.mac).c_str(),
+      !n.installed?"NOT INSTALLED":masterIO.ready(i,millis())?"READY":n.isolated?"FAULT / ISOLATED":"OFFLINE / VERIFYING");
+    if(n.lastACK)Serial.printf("%lu\n",(unsigned long)uint32_t(millis()-n.lastACK));
+    else Serial.println("NONE");
+  }
+}
+
 void checkWB() {
   demo::BenchProfile preview;preview.build(demo::functions[demo::functionIndex("W_B")]);
   for(size_t i=0;i<preview.count;++i){const auto &c=preview.slots[i];Serial.printf("%s -> %s IN%u GPIO%d\n",c.name,nodes[c.node].name,c.relayInput,c.gpio);}
-  Serial.println("Preview only. BENCH ARM UNLOADED, PROFILE W_B, CONFIRM <revision> UNLOADED, START W_B.");
+  Serial.println("Preview only. Use NODES to check replies, then START W_B. Missing slave actions are skipped; STATUS shows this run's mappings.");
 }
 
 void printList() {
@@ -279,6 +295,7 @@ bool provisionSlave4(const char *){Serial.println("Fixed package uses confirmed 
 void handleCommand(String line) {
   line.trim(); line.toUpperCase();
   if (line == "STATUS") { printStatus(); return; }
+  if (line == "NODES") { printNodes(); return; }
   if (line == "RADIO") { radio_diag::report(); return; }
   if(line=="STOP"||line=="ALL OFF"){requestStop();return;}
   if(channelTest.busy()&&!(line=="OUTPUTS DISARM")){Serial.println("BUSY: channel test active; use STOP");return;}
@@ -308,7 +325,9 @@ void handleCommand(String line) {
   }
   if (line.startsWith("START ")) {
     if (recovering) { Serial.println("START blocked: RESET still verifying nodes"); return; }
-    engine.startDemo(demo::functionIndex(line.substring(6).c_str()), millis()); return;
+    if(!engine.startDemo(demo::functionIndex(line.substring(6).c_str()), millis()))
+      Serial.println("START rejected: check function, active operation, required outputs OFF and latched fault; use STATUS");
+    return;
   }
   if (line.startsWith("TIME ")) {
     char name[16] = {}, extra = 0; unsigned long seconds = 0,phase=1;
@@ -317,8 +336,7 @@ void handleCommand(String line) {
     else Serial.println("TIME rejected: TIME <function> <1..3600 seconds> [1-based phase]; inactive/fault-free only");
     return;
   }
-  Serial.println("Commands: BENCH ARM UNLOADED, PROFILE W_B, CONFIRM <revision> UNLOADED, START W_B, STOP, STATUS, LIST, TIME W_D 15 2, RESET, PAIR, PAIR ADMIN");
-  Serial.println("Raw V1-V8 activation is retired: use named, confirmed profiles to avoid V2 identity collisions.");
+  Serial.println("Commands: NODES, RADIO, LIST, CHECK W_B, START W_B (or another function ID), STOP, STATUS, RESET");
 }
 
 void setup() {
@@ -395,6 +413,7 @@ void setup() {
   Serial.println("TUBATECH INTEGRATED MASTER: fixed-v1, 66 unloaded outputs, REAL DISABLED");
   Serial.println("Unloaded relay demo: join TubaTech_Master, select function, START. STOP remains available.");
   Serial.println("START W_B uses fixed wiring and required-controller ACKs; no arming/profile confirmation step.");
+  Serial.println("App optional: Serial Monitor 115200 baud, Newline. NODES checks links; START <function>, STOP, STATUS, RESET.");
 }
 
 void loop() {
@@ -417,7 +436,7 @@ void loop() {
   const uint32_t now = millis();
   for (uint8_t i=0; i<demo::ACTIVE_NODES; ++i) {
     Node &n = nodes[i];
-    if (n.waiting && uint32_t(now-n.sentAt) >= ACK_TIMEOUT) networkFault(i, "FAULT: ACK TIMEOUT",true);
+    if (n.installed && !(engine.busy()&&engine.profile().skips(i)) && n.waiting && uint32_t(now-n.sentAt) >= ACK_TIMEOUT) networkFault(i, "FAULT: ACK TIMEOUT",true);
   }
   engine.tick(millis());
   channelTest.tick(millis());
@@ -430,7 +449,7 @@ void loop() {
   // Continues every loop, including while the sequence timer is running.
   for (uint8_t i=0; i<demo::ACTIVE_NODES; ++i) {
     Node &n = nodes[i];
-    if (!n.installed || n.isolated || n.waiting || (n.retryAt&&int32_t(millis()-n.retryAt)<0)) continue;
+    if (!n.installed || (engine.busy()&&engine.profile().skips(i)) || n.isolated || n.waiting || (n.retryAt&&int32_t(millis()-n.retryAt)<0)) continue;
     if (!n.synced) {
       if (engine.busy() || (engine.faulted() && !recovering)) continue;
       const uint8_t type = n.confirmNeeded ? CONFIRM : SYNC;
