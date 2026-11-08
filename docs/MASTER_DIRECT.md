@@ -1,5 +1,7 @@
 # Direct MASTER control - no Android app needed
 
+For the requested manual ON/OFF workflow, use [the manual Serial guide](MANUAL_SERIAL.md): `START W_B ON` holds until `START W_B OFF` or STOP. The bare START examples below retain the original timed operation.
+
 Slave 2 replacement: **20:50:0D:8C:80:C4**, reported by the user on 8 November 2026. S2 is enabled again. All board IDs, 66 GPIO/relay assignments, active-LOW polarity, function actions and phase durations stay unchanged. Every radio uses **channel 6**.
 
 ## Upload

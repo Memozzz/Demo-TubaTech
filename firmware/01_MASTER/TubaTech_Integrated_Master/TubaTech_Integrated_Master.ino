@@ -87,7 +87,7 @@ void onReceive(const esp_now_recv_info_t *info,
                const uint8_t *data, int len) {
   radio_diag::observeRx(info,data,len);
   if (!info || !data || len != sizeof(Packet) || !rxQueue) return;
-  bool known=false;for(unsigned i=0;i<4;++i)if(nodes[i].installed&&!(engine.busy()&&engine.profile().skips(uint8_t(i)))&&!memcmp(info->src_addr,nodes[i].mac,6))known=true;
+  bool known=false;for(unsigned i=0;i<4;++i)if(nodes[i].installed&&!engine.suppressesNode(uint8_t(i))&&!memcmp(info->src_addr,nodes[i].mac,6))known=true;
   if(!known)return;
 
   Received r;
@@ -104,7 +104,7 @@ bool sendCommand(int nodeIndex, uint8_t type,
   if (!radioReady || nodeIndex < 0 || nodeIndex >= int(demo::ACTIVE_NODES)) return false;
   Node &n = nodes[nodeIndex];
   if (!n.installed || n.waiting || n.isolated || n.sequence == UINT32_MAX) return false;
-  if(engine.busy()&&engine.profile().skips(uint8_t(nodeIndex)))return false;
+  if(engine.suppressesNode(uint8_t(nodeIndex)))return false;
   if(type==SET_RELAY&&value&&n.uncertainMask)return false;
   if (type == SET_RELAY && (!n.synced || channel >= 14 || !(integrated::bankMask(integrated::ownerForIndex(uint8_t(nodeIndex)))&(1U<<channel)) || value > 1)) return false;
   Packet p = {MAGIC, sessionID, ++n.sequence, type, channel, value, 0};
@@ -161,7 +161,7 @@ demo::SendResult MasterIO::allOff(uint8_t node, uint32_t &ticket) {
 }
 demo::AckResult MasterIO::acknowledgement(uint8_t node, uint32_t ticket) const {
   const Node &n = nodes[node];
-  if(!n.installed||(engine.busy()&&engine.profile().skips(node)))return demo::AckResult::Failed;
+  if(!n.installed||engine.suppressesNode(node))return demo::AckResult::Failed;
   if (n.failed == ticket || n.isolated) return demo::AckResult::Failed;
   if (n.completed == ticket) return demo::AckResult::Verified;
   return demo::AckResult::Pending;
@@ -216,7 +216,7 @@ void processReplies() {
   for (int count=0; count<20 && rxQueue && xQueueReceive(rxQueue, &r, 0) == pdTRUE; ++count) {
     for (uint8_t i = 0; i < demo::ACTIVE_NODES; ++i) {
       Node &n = nodes[i];
-      if (!n.installed || (engine.busy()&&engine.profile().skips(i)) || memcmp(r.sender, n.mac, 6) != 0 || r.packet.session != sessionID ||
+      if (!n.installed || engine.suppressesNode(i) || memcmp(r.sender, n.mac, 6) != 0 || r.packet.session != sessionID ||
           !n.waiting || r.packet.sequence != n.pendingSequence || n.isolated || r.packet.owner!=integrated::ownerForIndex(i)) continue;
       if (r.packet.type == CHALLENGE && n.pendingType == SYNC) {
         n.nonce = uint32_t(r.packet.channel) | (uint32_t(r.packet.value)<<8) | (uint32_t(r.packet.stateMask)<<16);
@@ -325,6 +325,25 @@ void handleCommand(String line) {
   }
   if (line.startsWith("START ")) {
     if (recovering) { Serial.println("START blocked: RESET still verifying nodes"); return; }
+    char name[16]={},state[8]={},extra=0;unsigned phase=1;
+    const int fields=sscanf(line.c_str(),"START %15s %7s %u %c",name,state,&phase,&extra);
+    if(fields>=2){
+      const int index=demo::functionIndex(name);
+      const bool on=strcmp(state,"ON")==0,off=strcmp(state,"OFF")==0;
+      // Parse the whole command: malformed suffixes must never activate outputs.
+      char expected[64]={};
+      if(fields==2)snprintf(expected,sizeof(expected),"START %s %s",name,state);
+      else if(fields==3)snprintf(expected,sizeof(expected),"START %s %s %u",name,state,phase);
+      if((fields!=2&&fields!=3)||!(line==expected)||(!on&&!off)||(off&&fields!=2)||phase<1){
+        Serial.println("Use START <function> ON [phase] or START <function> OFF");return;
+      }
+      if(on&&index>=0&&demo::functions[index].phaseCount>1&&fields!=3){
+        Serial.println("Multiple phases: use ON 1, then ON 2; each phase holds until your next command");return;
+      }
+      const bool accepted=on?engine.manualOn(index,size_t(phase-1),millis()):engine.manualOff(index,millis());
+      if(!accepted)Serial.println("MANUAL rejected: use supported function, phase 1 first then next phase; one active function; check STATUS/fault");
+      return;
+    }
     if(!engine.startDemo(demo::functionIndex(line.substring(6).c_str()), millis()))
       Serial.println("START rejected: check function, active operation, required outputs OFF and latched fault; use STATUS");
     return;
@@ -336,7 +355,7 @@ void handleCommand(String line) {
     else Serial.println("TIME rejected: TIME <function> <1..3600 seconds> [1-based phase]; inactive/fault-free only");
     return;
   }
-  Serial.println("Commands: NODES, RADIO, LIST, CHECK W_B, START W_B (or another function ID), STOP, STATUS, RESET");
+  Serial.println("Commands: NODES, LIST, START W_B ON, START W_B OFF, START W_D ON 1 (then ON 2), STOP, STATUS, RESET. START W_B without ON retains timed operation.");
 }
 
 void setup() {
@@ -414,6 +433,7 @@ void setup() {
   Serial.println("Unloaded relay demo: join TubaTech_Master, select function, START. STOP remains available.");
   Serial.println("START W_B uses fixed wiring and required-controller ACKs; no arming/profile confirmation step.");
   Serial.println("App optional: Serial Monitor 115200 baud, Newline. NODES checks links; START <function>, STOP, STATUS, RESET.");
+  Serial.println("MANUAL: START W_B ON holds until START W_B OFF / STOP. Missing slaves are skipped honestly; GPIO ACKs required for participants.");
 }
 
 void loop() {
@@ -436,7 +456,7 @@ void loop() {
   const uint32_t now = millis();
   for (uint8_t i=0; i<demo::ACTIVE_NODES; ++i) {
     Node &n = nodes[i];
-    if (n.installed && !(engine.busy()&&engine.profile().skips(i)) && n.waiting && uint32_t(now-n.sentAt) >= ACK_TIMEOUT) networkFault(i, "FAULT: ACK TIMEOUT",true);
+    if (n.installed && !engine.suppressesNode(i) && n.waiting && uint32_t(now-n.sentAt) >= ACK_TIMEOUT) networkFault(i, "FAULT: ACK TIMEOUT",true);
   }
   engine.tick(millis());
   channelTest.tick(millis());
@@ -449,9 +469,9 @@ void loop() {
   // Continues every loop, including while the sequence timer is running.
   for (uint8_t i=0; i<demo::ACTIVE_NODES; ++i) {
     Node &n = nodes[i];
-    if (!n.installed || (engine.busy()&&engine.profile().skips(i)) || n.isolated || n.waiting || (n.retryAt&&int32_t(millis()-n.retryAt)<0)) continue;
+    if (!n.installed || engine.suppressesNode(i) || n.isolated || n.waiting || (n.retryAt&&int32_t(millis()-n.retryAt)<0)) continue;
     if (!n.synced) {
-      if (engine.busy() || (engine.faulted() && !recovering)) continue;
+      if ((engine.busy()&&!engine.manualControl()) || (engine.faulted() && !recovering)) continue;
       const uint8_t type = n.confirmNeeded ? CONFIRM : SYNC;
       if (!sendCommand(i, type)) networkFault(i, "FAULT: handshake send failed",true);
     } else if (uint32_t(millis()-n.lastHeartbeatSent) >= HEARTBEAT_INTERVAL) {

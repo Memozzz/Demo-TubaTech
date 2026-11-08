@@ -23,3 +23,7 @@ if __name__=='__main__':
     subprocess.run([compiler,'-std=c++17','-Wall','-Wextra','-Wno-misleading-indentation','-Ichecks/host/stubs',
         str(ROOT/'checks/host/direct_master_tests.cpp'),'-o',str(direct)],cwd=ROOT,check=True)
     subprocess.run([str(direct)],cwd=ROOT,check=True)
+    manual=out/'manual_master'
+    subprocess.run([compiler,'-std=c++17','-Wall','-Wextra','-Wno-misleading-indentation','-Ichecks/host/stubs',
+        str(ROOT/'checks/host/manual_master_tests.cpp'),'-o',str(manual)],cwd=ROOT,check=True)
+    subprocess.run([str(manual)],cwd=ROOT,check=True)

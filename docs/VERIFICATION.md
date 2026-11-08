@@ -1,5 +1,11 @@
 # Verification report
 
+## Manual Serial ON/OFF - 8 November 2026
+
+Explicit `START <function> ON` holds a source-defined phase until matching OFF/STOP or a fault. Multi-phase functions use explicit consecutive phase numbers. The existing bare START timed path and original sequence/wiring fingerprints are unchanged. Actual Serial-loop host tests cover W_B held for 60 seconds without a timer, exact GPIO ACKs/masks, all 30 functions / 33 phases, missing S2, all slaves missing, MASTER-only outputs, late S2 requiring repeated ON, OFF without prior ON, STOP/RESET, exclusive operation, invalid/unsupported commands and participating loss/missing/corrupt ACK faults. Full-mode, timed and explicit-exclusion regressions pass. All five sketches compile on Arduino-ESP32 3.3.12. Receiver behavior, fixed channel 6, MACs and relay polarity are unchanged. No Android rebuild is required.
+
+No physical test has been marked passed. See [manual commands, per-board uploads and remaining checks](MANUAL_SERIAL.md).
+
 ## Direct MASTER and replacement S2 - 8 November 2026
 
 S2 is enabled at user-supplied station MAC `20:50:0D:8C:80:C4`. Production exclusions are empty; safe missing-at-START skipping remains enabled. The earlier explicit-S2-absence suite now uses a host-only override. A local recoverable snapshot preserves the previous uncommitted work.

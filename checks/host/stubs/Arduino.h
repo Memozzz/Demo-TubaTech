@@ -35,14 +35,15 @@ struct String {
 };
 struct SerialStub {
   std::string output;
+  std::deque<char> input;
   void begin(int) {}
   void println(const char *s="") { output+=s; output+='\n'; }
   void printf(const char *format,...) {
     char buffer[1024]; va_list args; va_start(args,format);
     vsnprintf(buffer,sizeof(buffer),format,args); va_end(args); output+=buffer;
   }
-  int available() { return 0; }
-  int read() { return 0; }
+  int available() { return int(input.size()); }
+  int read() { if(input.empty())return -1;const char c=input.front();input.pop_front();return c; }
 };
 inline SerialStub Serial;
 struct MockQueue { size_t size; std::deque<std::vector<uint8_t>> data; };

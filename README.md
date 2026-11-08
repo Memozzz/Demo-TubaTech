@@ -1,5 +1,7 @@
 # Demo TubaTech
 
+**Manual Serial ON/OFF:** [upload the five sketches and use `START W_B ON` / `START W_B OFF`](docs/MANUAL_SERIAL.md). Explicit ON holds until OFF/STOP or a communication fault. Missing slave actions are visibly skipped. No app is required; the existing timed command remains available without the ON/OFF suffix.
+
 Separate Android controller for the **66 wired, active-LOW relay outputs** on one ESP32 MASTER and four ESP-NOW slaves. App label: **Demo TubaTech**. Android application ID: **`com.tubatech.demo`**, separate from the original `com.example.tubatech` app. Both can remain installed.
 
 **Direct MASTER control:** see [the app-free upload and command guide](docs/MASTER_DIRECT.md). Slave 2/TETRIARY is enabled with replacement MAC `20:50:0D:8C:80:C4`. START skips safely unavailable slaves at that moment, preserving every phase timer and pin assignment. It can run with only MASTER present. Late boards join on the next START; loss of an already participating board still faults. See [configuration, verification and exact upload requirements](docs/PARTIAL_DEMO.md).

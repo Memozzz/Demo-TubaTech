@@ -1,6 +1,7 @@
 #pragma once
 #include "bench_profiles.h"
 #include <initializer_list>
+#include <string>
 
 namespace demo {
 enum class SendResult { Sent, Busy, Failed };
@@ -33,7 +34,10 @@ public:
   bool faulted() const { return fault_; }
   size_t skippedActions() const {return skippedActions_;}
   bool partialCompletion() const {return stage_==Stage::Complete&&skippedActions_>0;}
-  const char *stateName() const {return partialCompletion()?"COMPLETE_PARTIAL":stageName(stage_);}
+  bool manualControl() const {return manual_;}
+  bool manualHeld() const {return manual_&&stage_==Stage::Running;}
+  bool suppressesNode(uint8_t node)const{return busy()&&!manual_&&profile_.skips(node);}
+  const char *stateName() const {return manual_&&busy()&&!shuttingDown()?(manualHeld()?"MANUAL_ON":"MANUAL_ACTIONS"):partialCompletion()?"COMPLETE_PARTIAL":stageName(stage_);}
   bool busy() const {
     return stage_ == Stage::ValvesOn || stage_ == Stage::PumpsOn || stage_ == Stage::Running || shuttingDown();
   }
@@ -84,7 +88,7 @@ public:
   const char *phaseName() const {return active_>=0 && phase_<functions[active_].phaseCount?functions[active_].phases[phase_].name:"none";}
   uint32_t duration(size_t index,size_t phase=0) const { return index<FUNCTION_COUNT&&phase<MAX_PHASES?durations_[index][phase]:0; }
   uint32_t remainingMs(uint32_t now) const {
-    if(stage_!=Stage::Running||active_<0)return 0;
+    if(manual_||stage_!=Stage::Running||active_<0)return 0;
     uint32_t elapsed=uint32_t(now-runAt_),total=duration(active_,phase_);return elapsed>=total?0:total-elapsed;
   }
   bool setTime(int index, uint32_t seconds, size_t phase=0) {
@@ -111,7 +115,7 @@ public:
         fail("START verification failed: node unavailable or outputs not OFF", now); return false;
       }
     }
-    active_ = index; fault_ = false; reason_ = "none"; stopped_ = false;skippedActions_=0;
+    active_ = index; fault_ = false; reason_ = "none"; stopped_ = false;skippedActions_=0;manual_=false;
     stage_ = Stage::ValvesOn; phase_=0; profile_.confirmed=false; cursor_ = 0; pending_ = false; phaseAt_ = now;
     io_.report("EXECUTING PHASE ACTIONS (application ACK required)");
     return true;
@@ -133,6 +137,42 @@ public:
     profile_=candidate;benchArmed_=true;
     return start(index,now);
   }
+  // Explicit Serial ON holds a source-defined phase until OFF/STOP or a fault.
+  // Repeating ON may add a newly verified board; it never joins automatically.
+  bool manualOn(int index,size_t phase,uint32_t now){
+    if(fault_||index<0||size_t(index)>=FUNCTION_COUNT)return false;
+    const auto &f=functions[index];
+    if(f.status!=DefinitionStatus::RelayDemo||phase>=f.phaseCount)return false;
+    if(busy()){
+      if(!manualHeld()||active_!=index||(phase!=phase_&&phase!=phase_+1))return false;
+      BenchProfile candidate;
+      if(!candidate.build(f,io_.configuredMask()&benchMask_,exclusionsForStart(now)))return false;
+      // Existing owners must stay verified. Newly included owners must be OFF.
+      if((candidate.requiredMask&profile_.requiredMask)!=profile_.requiredMask)return false;
+      for(uint8_t n=0;n<ACTIVE_NODES;++n)if(candidate.requiredMask&(1U<<n))
+        if(!io_.ready(n,now)||(!(profile_.requiredMask&(1U<<n))&&!io_.allOffKnown(n)))return false;
+      candidate.function=index;candidate.revision=profile_.revision+1;profile_=candidate;
+      phase_=phase;cursor_=0;pending_=false;phaseAt_=now;skippedActions_=0;stage_=Stage::ValvesOn;
+    }else{
+      if(phase!=0||!startDemo(index,now))return false;
+      manual_=true;
+    }
+    io_.report("MANUAL ON requested: source phase actions require GPIO ACKs; holds until OFF/STOP or fault");
+    return true;
+  }
+  bool manualOff(int index,uint32_t now){
+    if(index<0||size_t(index)>=FUNCTION_COUNT||functions[index].status!=DefinitionStatus::RelayDemo)return false;
+    if(busy()){
+      if(active_!=index)return false;
+      stop(now);return true;
+    }
+    if(fault_)return false;
+    BenchProfile candidate;
+    if(!candidate.build(functions[index],io_.configuredMask()&benchMask_,exclusionsForStart(now)))return false;
+    candidate.function=index;candidate.revision=profile_.revision+1;profile_=candidate;active_=index;
+    manual_=true;phase_=0;skippedActions_=candidate.skippedActionCount;
+    stop(now);return true;
+  }
   void stop(uint32_t now) {
     if (shuttingDown()) return;
     stopped_ = true;
@@ -147,7 +187,7 @@ public:
   bool reset(uint32_t now) {
     if (busy()) { io_.report("RESET blocked: shutdown/operation still active"); return false; }
     for(uint8_t n=0;n<ACTIVE_NODES;++n)if((resetMask()&(1U<<n))&&(!io_.ready(n,now)||!io_.allOffKnown(n)))return false;
-    fault_ = false; benchArmed_=false; profile_.confirmed=false; stage_ = Stage::Idle; active_ = -1; reason_ = "none";skippedActions_=0;
+    fault_ = false; benchArmed_=false; profile_.confirmed=false; stage_ = Stage::Idle; active_ = -1; reason_ = "none";skippedActions_=0;manual_=false;
     io_.report("RESET verified: IDLE, required nodes ready and OFF");
     return true;
   }
@@ -158,6 +198,7 @@ public:
       if ((profile_.requiredMask&(1U<<n))&&!io_.ready(n, now)) { fail("FAULT: node readiness lost", now); return; }
     }
     if (stage_ == Stage::Running) {
+      if(manual_)return; // Heartbeats and readiness/ACK protection continue.
       if (static_cast<uint32_t>(now-runAt_) >= duration(active_,phase_)) {
         if(++phase_<functions[active_].phaseCount){stage_=Stage::ValvesOn;cursor_=0;phaseAt_=now;io_.report("NEXT PHASE");}
         else beginShutdown(now);
@@ -170,6 +211,8 @@ public:
         fail("FAULT: sequence output ACK missing or failed verification", now); return;
       }
       if (ack == AckResult::Pending) return;
+      if(manual_){const auto &a=functions[active_].phases[phase_].actions[cursor_];
+        const std::string message=std::string("GPIO ACK: ")+a.component+(a.on?" ON":" OFF");io_.report(message.c_str());}
       pending_ = false; ++cursor_; phaseAt_ = now;
     }
     const auto &phase=functions[active_].phases[phase_];
@@ -178,10 +221,10 @@ public:
       if(action.kind==ActionKind::WaitForSensor){fail("FAULT: sensor condition is not integrated/calibrated",now);return;}
       const Component *c=profile_.findName(action.component);
       if(!c){fail("FAULT: missing required component; no action may be skipped",now);return;}
-      if(profile_.skips(c->node)){++skippedActions_;++cursor_;io_.report("SKIPPED / NOT EXECUTED: board excluded for this run");continue;}
+      if(profile_.skips(c->node)){++skippedActions_;++cursor_;const std::string message=std::string("SKIPPED / NOT EXECUTED: ")+c->name;io_.report(message.c_str());continue;}
       issue(*c,action.on,now);return;
     }
-    stage_=Stage::Running;runAt_=now;io_.report("RUNNING PHASE: timer starts after action ACKs");
+    stage_=Stage::Running;runAt_=now;io_.report(manual_?(skippedActions_?"MANUAL ON / PARTIAL: participating GPIOs acknowledged; skipped actions NOT EXECUTED; holds until OFF/STOP":"MANUAL ON: phase GPIOs acknowledged; holds until OFF/STOP"):"RUNNING PHASE: timer starts after action ACKs");
   }
 
   static const char *stageName(Stage s) {
@@ -205,7 +248,7 @@ private:
   uint32_t durations_[FUNCTION_COUNT][MAX_PHASES] = {};
   BenchProfile profile_;
   size_t phase_=0;
-  bool benchArmed_=false;
+  bool benchArmed_=false,manual_=false;
   uint8_t benchMask_=DEFAULT_BENCH_MASK;
   uint32_t phaseAt_ = 0, runAt_ = 0, shutdownAt_ = 0, ticket_ = 0;
   size_t cursor_ = 0;
@@ -269,7 +312,7 @@ private:
       return;
     }
     stage_ = fault_ ? Stage::Fault : stopped_ ? Stage::Stopped : Stage::Complete;
-    io_.report(fault_ ? "FAULT LATCHED: shutdown attempted; RESET required" : stopped_ ? "STOPPED: all required outputs acknowledged OFF" : partialCompletion()?"PARTIAL DEMO COMPLETE: participating outputs OFF; excluded actions SKIPPED / NOT EXECUTED":"COMPLETE: all required outputs acknowledged OFF");
+    io_.report(fault_ ? "FAULT LATCHED: shutdown attempted; RESET required" : stopped_ ? (manual_?(skippedActions_?"MANUAL OFF / PARTIAL: participating outputs acknowledged OFF; skipped actions NOT EXECUTED":"MANUAL OFF: all required outputs acknowledged OFF"):"STOPPED: all required outputs acknowledged OFF") : partialCompletion()?"PARTIAL DEMO COMPLETE: participating outputs OFF; excluded actions SKIPPED / NOT EXECUTED":"COMPLETE: all required outputs acknowledged OFF");
   }
 };
 } // namespace demo
